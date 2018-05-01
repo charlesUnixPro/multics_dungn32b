@@ -1,0 +1,15 @@
+Notes on porting to Multics.
+
+"^L" replaced with "C %page". Turns out that sometimes confuses the 
+free-form parser, so was changed to "C page" in some places.
+
+"INCLUDE DPARAM.FOR" changed to "%include dparam". DPARAM.FOR renamed
+to dparam.fortran.incl.
+
+All usage of .AND., .OR., .XOR. and .NOT. on integer operands was
+changed to AND(), OR(), XOR() and COMPL().
+
+In game$initfl, the calculation of SHOUR and SMIN was just broken, and
+was recoded to work correctly, fixing GTTIME().
+
+

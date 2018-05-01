@@ -1,0 +1,198 @@
+C CYCLOP-	Cyclops function
+C
+C Declarations
+C
+	LOGICAL FUNCTION CYCLOP(ARG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	CYCLOP=.TRUE.				! assume wins.
+	IF(.NOT.CYCLOF) GO TO 100		! asleep?
+	IF((PRSA.NE.ALARMW).AND.(PRSA.NE.MUNGW).AND.(PRSA.NE.KICKW).AND.
+	&	(PRSA.NE.BURNW).AND.(PRSA.NE.KILLW).AND.(PRSA.NE.ATTACW))
+	&	 GO TO 10
+	CYCLOF=.FALSE.				! wake cyclops.
+	CALL RSPEAK(187)			! describe.
+	RVCYC=IABS(RVCYC)
+	OFLAG2(CYCLO)=OR(OFLAG2(CYCLO),FITEBT)
+	RETURN
+C
+100	IF(PRSA.NE.GIVEW) GO TO 500		! give?
+	IF(PRSO.NE.FOOD) GO TO 300 		! food?
+	IF(RVCYC.LT.0) GO TO 200		! already eaten?
+	CALL NEWSTA(FOOD,189,0,0,0)		! eats peppers.
+	RVCYC=MIN0(-1,-RVCYC)			! gets thirsty.
+200	CFLAG(CEVCYC)=.TRUE.			! turn on cyclops timer.
+	CTICK(CEVCYC)=-1
+	RETURN
+C
+300	IF(PRSO.NE.WATER) GO TO 400		! drink when thirsty?
+	IF(RVCYC.GE.0) GO TO 350
+	CALL NEWSTA(PRSO,190,0,0,0)		! drinks and
+	CYCLOF=.TRUE.				! falls asleep.
+C	OFLAG2(CYCLO)=OFLAG2(CYCLO).AND.(.NOT.FITEBT)
+	OFLAG2(CYCLO)=AND(OFLAG2(CYCLO),COMPL(FITEBT))
+	CFLAG(CEVCYC)=.FALSE.			! turn off cyclops timer.
+	RETURN
+C
+350	CALL RSPEAK(191)			! not thirsty.
+10	CYCLOP=.FALSE.				! fails.
+	RETURN
+C
+400	I=192					! assume inedible.
+	IF(PRSO.EQ.GARLI) I=193			! garlic is joke.
+450	CALL RSPEAK(I)				! disdain it.
+	RETURN
+C
+500	IF((PRSA.NE.KILLW).AND.(PRSA.NE.ATTACW).AND.
+	&  (PRSA.NE.MUNGW).AND.(PRSA.NE.THROWW)) GO TO 600
+	CFLAG(CEVCYC)=.TRUE.			! turn on cyclops timer.
+	CTICK(CEVCYC)=-1
+	I=201					! assume not poke.
+	IF(PRSA.EQ.MUNGW) I=912			! poke joke.
+	GO TO 450				! go remark and return.
+C
+600	I=202					! assume take.
+	IF(PRSA.EQ.TAKEW) GO TO 450
+	I=203					! assume tie.
+	IF(PRSA.EQ.TIEW) GO TO 450
+	CYCLOP=.FALSE.
+	RETURN
+C
+	END
+C %page
+C THIEFP-	Thief function
+C
+C Declarations
+C
+	LOGICAL FUNCTION THIEFP(ARG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QHERE,PROB,QEMPTY
+C
+	THIEFP=.TRUE.				! assume wins.
+	IF(PRSA.NE.FIGHTW) GO TO 100		! fight?
+	IF(OCAN(STILL).EQ.THIEF) GO TO 10	! got stilletto?  f.
+	IF(QHERE(STILL,THFPOS)) GO TO 50	! can he recover it?
+	CALL NEWSTA(THIEF,0,0,0,0)		! no, vanish.
+	IF(QHERE(THIEF,HERE)) CALL RSPEAK(498)	! if hero, tell.
+	RETURN
+C
+50	CALL NEWSTA(STILL,0,0,THIEF,0)		! yes, recover.
+	IF(QHERE(THIEF,HERE)) CALL RSPEAK(499)	! if hero, tell.
+	RETURN
+C
+100	IF(PRSA.NE.DEADXW) GO TO 200		! dead?
+	THFACT=.FALSE.				! disable demon.
+	IF(HERE.NE.TREAS) GO TO 150		! in treasure room?
+	J=501
+	DO 125 I=1,OLNT				! loop.
+	  IF((I.EQ.CHALI).OR.(I.EQ.THIEF).OR..NOT.QHERE(I,HERE))
+	&	GO TO 125			! is it here?
+C	  OFLAG1(I)=OFLAG1(I).OR.VISIBT		! rematerialize objects.
+	  OFLAG1(I)=OR(OFLAG1(I),VISIBT)		! rematerialize objects.
+	  CALL RSPSUB(J,ODESC2(I))		! describe.
+	  J=502
+C	  IF(.NOT.QEMPTY(I).AND.
+C	&   (((OFLAG1(I).AND.TRANBT).NE.0).OR.
+C	&    ((OFLAG2(I).AND.OPENBT).NE.0))) CALL PRINCO(I,573,.TRUE.)
+	  IF(.NOT.QEMPTY(I).AND.
+	&   (((AND(OFLAG1(I),TRANBT)).NE.0).OR.
+	&    ((AND(OFLAG2(I),OPENBT)).NE.0))) CALL PRINCO(I,573,.TRUE.)
+125	CONTINUE
+C
+150	J=500
+	DO 175 I=1,OLNT				! carrying anything?
+	  IF(OADV(I).NE.-THIEF) GO TO 175
+	  CALL NEWSTA(I,0,HERE,0,0)		! drop in room.
+	  CALL RSPSUB(J,ODESC2(I))		! describe.
+	  J=502
+C	  IF(.NOT.QEMPTY(I).AND.
+C	&   (((OFLAG1(I).AND.TRANBT).NE.0).OR.
+C	&    ((OFLAG2(I).AND.OPENBT).NE.0))) CALL PRINCO(I,573,.TRUE.)
+	  IF(.NOT.QEMPTY(I).AND.
+	&   (((AND(OFLAG1(I),TRANBT)).NE.0).OR.
+	&    ((AND(OFLAG2(I),OPENBT)).NE.0))) CALL PRINCO(I,573,.TRUE.)
+175	CONTINUE
+	RETURN
+C
+200	IF(PRSA.NE.FRSTQW) GO TO 250		! first encounter?
+	THIEFP=PROB(20,75)
+	RETURN
+C
+250	IF((PRSA.NE.HELLOW).OR.(OCAPAC(THIEF).GE.0)) GO TO 300
+	CALL RSPEAK(626)			! hello to out thief?
+	RETURN
+C
+300	IF(PRSA.NE.OUTXW) GO TO 400		! out?
+	THFACT=.FALSE.				! disable demon.
+	ODESC1(THIEF)=504			! change description.
+C	OFLAG1(STILL)=OFLAG1(STILL).AND..NOT.VISIBT
+	OFLAG1(STILL)=AND(OFLAG1(STILL),COMPL(VISIBT))
+	RETURN
+C
+400	IF((PRSA.NE.INXW).AND.			! wake from fight demon?
+	&  (((PRSA.NE.ALARMW).AND.(PRSA.NE.KICKW)).OR.
+	&    (OCAPAC(THIEF).GE.0))) GO TO 500	! wake, kick while out?
+	OCAPAC(THIEF)=IABS(OCAPAC(THIEF))	! wake him up.
+	IF(QHERE(THIEF,HERE)) CALL RSPEAK(505)	! can hero see?
+	THFACT=.TRUE.				! enable demon.
+	ODESC1(THIEF)=503			! change description.
+C	OFLAG1(STILL)=OFLAG1(STILL).OR.VISIBT
+	OFLAG1(STILL)=OR(OFLAG1(STILL),VISIBT)
+	RETURN
+C
+500	IF(PRSA.NE.TAKEW) GO TO 600		! take?
+	CALL RSPEAK(506)			! joke.
+	RETURN
+C
+C 600	IF((PRSA.NE.THROWW).OR.(PRSO.NE.KNIFE).OR.
+C	&	((OFLAG2(THIEF).AND.FITEBT).NE.0)) GO TO 700
+600	IF((PRSA.NE.THROWW).OR.(PRSO.NE.KNIFE).OR.
+	&	((AND(OFLAG2(THIEF),FITEBT)).NE.0)) GO TO 700
+	IF(PROB(10,10)) GO TO 650		! threw knife, 10%?
+	CALL RSPEAK(507)			! no, just makes
+C	OFLAG2(THIEF)=OFLAG2(THIEF).OR.FITEBT	! thief mad.
+	OFLAG2(THIEF)=OR(OFLAG2(THIEF),FITEBT)	! thief mad.
+	RETURN
+C
+650	J=508					! thief drops stuff.
+	DO 675 I=1,OLNT
+	  IF(OADV(I).NE.-THIEF) GO TO 675	! thief carrying?
+	  J=509
+	  CALL NEWSTA(I,0,HERE,0,0)
+675	CONTINUE
+	CALL NEWSTA(THIEF,J,0,0,0)		! thief vanishes.
+	RETURN
+C
+700	IF(((PRSA.NE.THROWW).AND.(PRSA.NE.GIVEW)).OR.(PRSO.EQ.0).OR.
+	&	(PRSO.EQ.THIEF)) GO TO 10	! throw/give to thief?
+	IF(OCAPAC(THIEF).GE.0) GO TO 750
+	OCAPAC(THIEF)=IABS(OCAPAC(THIEF))	! wake him up.
+	THFACT=.TRUE.				! enable demon.
+	ODESC1(THIEF)=503			! change description.
+C	OFLAG1(STILL)=OFLAG1(STILL).OR.VISIBT
+	OFLAG1(STILL)=OR(OFLAG1(STILL),VISIBT)
+	CALL RSPEAK(510)
+C
+750	IF((PRSO.NE.BRICK).OR.(OCAN(FUSE).NE.BRICK).OR.
+	&	(CTICK(CEVFUS).EQ.0)) GO TO 800
+	CALL RSPEAK(511)			! thief refuses bomb.
+	RETURN
+C
+800	IF(PRSO.NE.WATER) GO TO 850		! water?
+	CALL NEWSTA(WATER,1081,0,0,0)		! slips through fingers.
+	RETURN
+C
+850	CALL NEWSTA(PRSO,0,0,0,-THIEF)		! thief takes gift.
+	IF(OTVAL(PRSO).GT.0) GO TO 900		! a treasure?
+	CALL RSPSUB(512,ODESC2(PRSO))
+	RETURN
+C
+900	CALL RSPSUB(627,ODESC2(PRSO))		! thief engrossed.
+	THFENF=.TRUE.
+	RETURN
+C
+10	THIEFP=.FALSE.
+	RETURN
+	END

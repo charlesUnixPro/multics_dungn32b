@@ -1,0 +1,42 @@
+C NBLEN-	Compute string length without trailing blanks
+C
+C Declarations
+C
+	INTEGER FUNCTION NBLEN(STRING)
+	IMPLICIT INTEGER (A-Z)
+	CHARACTER*(*) STRING
+C
+	NBLEN=LEN(STRING)			! get nominal length
+100	IF(NBLEN.LE.0) RETURN			! any string left?
+	IF(STRING(NBLEN:NBLEN).NE.' ') RETURN	! found a non-blank?
+	NBLEN=NBLEN-1				! no, trim len by 1
+	GO TO 100				! and continue.
+C
+	END
+C page
+C
+C RND - Return a random integer mod n
+C
+	INTEGER FUNCTION RND (N)
+	IMPLICIT INTEGER (A-Z)
+	REAL RAN
+	COMMON /SEED/ RNSEED
+
+C	RND = RAND(0)*FLOAT(N)
+          call random_$uniform (RAN)
+	rnd = ran * float (n)
+	RETURN
+
+	END
+C
+C INIRND - Initialize random number seed
+C
+	SUBROUTINE INIRND (LOW, HIGH)
+	IMPLICIT INTEGER (A-Z)
+	COMMON /SEED/ RNSEED
+
+C	CALL SRAND((ISHFT(HIGH,16)+LOW).OR.1)
+	call random_$set_seed (INT(OR(HIGH*65536+LOW,1)))
+	RETURN
+
+	END

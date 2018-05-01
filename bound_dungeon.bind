@@ -1,0 +1,70 @@
+Objectname: bound_dungeon;
+Addname: dungeon;
+
+objectname: dungeo;
+synonym: txcryp, dungeon;
+
+objectname: game;
+synonym: xendmv, xvehic, initfl, protct;
+
+objectname: objects;
+synonym: oappli, sobjs;
+
+objectname: objs2;
+synonym: nobjs, mirpan, ballop, trollp;
+
+objectname: objs3;
+synonym: cyclop, thiefp;
+
+objectname: parser;
+synonym: rdline, parse, lex, sparse;
+
+objectname: pars2;
+synonym: unpack, syneql, getobj, schlst, thisit, synmch;
+
+objectname: pars3;
+synonym: takeit, gwim, noadjs, lcify, findvb, findpr;
+
+objectname: rooms;
+synonym: rappli, lookto, ewtell;
+
+objectname: subr;
+synonym: rspeak, rspsub, rspsb2, bug, newsta, objact, qhere, qempty;
+
+objectname: subr2;
+synonym: jigsup, princr, invent, oactor, prob, rmdesc;
+
+objectname: subr3;
+synonym: princo, score, scrupd, moveto, findxt;
+
+objectname: subr4;
+synonym: orphan, fwim, yesno, robadv, robrm, winnin;
+
+objectname: subr5;
+synonym: gttime, fights, vilstr, opncls, lit;
+
+objectname: subr6;
+synonym: encryp, cpgoto, cpinfo, weighr, ghere, mrhere;
+
+objectname: subr7;
+synonym: inirnd, nblen, rnd, srand, rand;
+
+objectname: timefnc;
+synonym: cevapp, litint, fightd, swordd, cevapp, clockd, blow;
+
+objectname: timefnc2;
+synonym: thiefd, infest, aappli;
+
+objectname: verbs;
+synonym: vappli, take, drop, put;
+
+objectname: verbs2;
+synonym: valuac, savegm, rstrgm, qbunch, walk;
+
+objectname: verbs3;
+synonym: cxappl;
+
+
+objectname: dtext_;
+synonym: idate,itime;
+

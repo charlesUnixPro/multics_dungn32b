@@ -1,0 +1,105 @@
+/* The original DTEXT.TXT is 271280 bytes; at 80 chars a record, 3391 records */
+
+dtext_module: proc;
+
+dcl ioa_ entry options (variable);
+dcl hcs_$initiate entry (char(*), char(*), char(*), fixed bin(1), fixed bin(2), ptr, fixed bin(35));
+dcl hcs_$terminate_noname entry (ptr, fixed bin(35));
+
+dcl get_wdir_ entry () returns (char (168) aligned);
+dcl sub_err_ entry() options(variable);
+
+dcl dtext_ptr ptr static init (null);
+dcl old_dtext (3391) char (80) based (dtext_ptr);
+dcl 1 dtext aligned based (dtext_ptr),
+  2 record (3391),
+    3 key fixed bin (35),
+    3 chars char(76);
+dcl dtext_words (67820) bit (36) based (dtext_ptr);
+dcl word0 bit (36) based (dtext_ptr);
+
+dcl code fixed bin (35);
+
+dcl null builtin;
+
+open: entry;
+
+    dtext_ptr = null;
+    call hcs_$initiate (get_wdir_ (), "DTEXT.DAT", "", 0, 0, dtext_ptr, code);
+    if dtext_ptr = null
+    then do;
+      call sub_err_ (code, "initiate failed");
+      stop;
+    end;
+/*
+    call ioa_ ("debug ^o ^o ^o ^o", dtext_words (1), dtext_words (2), dtext_words (3), dtext_words (4));
+    call ioa_ ("in open ^o ^o ^o ^o ^o", word0, substr (old_dtext(1), 1, 1), substr (old_dtext(1), 2, 1), substr (old_dtext(1), 3, 1), substr (old_dtext(1), 4, 1));
+    call ioa_ ("in open ^o ^o ^o ^o ^o", word0, substr (old_dtext(1), 5, 1), substr (old_dtext(1), 6, 1), substr (old_dtext(1), 7, 1), substr (old_dtext(1), 8, 1));
+    call ioa_ ("in open ^o ^o ^o ^o ^o", word0, substr (dtext.record(1).chars, 1, 1), substr (dtext.record(1).chars, 2, 1), substr (dtext.record(1).chars, 3, 1), substr (dtext.record(1).chars, 4, 1));
+*/
+
+    return;
+
+read: entry (rec_num, key, buffer);
+
+    dcl rec_num fixed bin (35),
+        key fixed bin (35),
+        buffer char(*);
+
+    key = dtext.record(rec_num).key;
+    buffer = dtext.record(rec_num).chars;
+/*
+    call ioa_ ("key ^d", key);
+    call ioa_ ("in read ^o ^o ^o ^o ^o", word0, substr (buffer, 1, 1), substr (buffer, 2, 1), substr (buffer, 3, 1), substr (buffer, 4, 1));
+*/
+    return;
+
+close: entry;
+    call hcs_$terminate_noname (dtext_ptr, code);
+    return;
+
+
+itime: entry (time);
+    dcl time (3) fixed bin (35);
+
+
+
+    dcl clock_ entry returns (fixed bin(71));
+    dcl date_time_$from_clock entry (fixed bin(71), char(*), ptr, fixed bin(35));
+
+    dcl 1 tv like time_value;
+
+    tv.version = Vtime_value_3;
+    call date_time_$from_clock (clock_ (), "", addr(tv), code);
+
+    if code ^= 0 
+    then do;
+      call sub_err_ (code, "from_clock failed");
+    end;
+
+    time(1) = tv.Hd;
+    time(2) = tv.MH;
+    time(3) = tv.SM;
+    return;
+
+idate: entry (y, m, d);
+    dcl y fixed bin (35);
+    dcl m fixed bin (35);
+    dcl d fixed bin (35);
+
+    tv.version = Vtime_value_3;
+    call date_time_$from_clock (clock_ (), "", addr(tv), code);
+
+    if code ^= 0 
+    then do;
+      call sub_err_ (code, "from_clock failed");
+    end;
+
+    y = tv.yc;
+    m = tv.my;
+    d = tv.dm;
+    return;
+
+%include time_value;
+end dtext_module;
+

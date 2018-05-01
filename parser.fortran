@@ -1,0 +1,1146 @@
+C Parser for DUNGEON
+C
+C COPYRIGHT 1980, 1990, INFOCOM COMPUTERS AND COMMUNICATIONS, CAMBRIDGE MA.
+C ALL RIGHTS RESERVED, COMMERCIAL USAGE STRICTLY PROHIBITED
+C WRITTEN BY R. M. SUPNIK
+C
+C 29-Sep-94	RMS	Fixed bugs in PLAY WITH, ALL BUT, GWIM, THISIT, IT.
+C			Fixed vocabularly for ROCK, LIGHT, GATES, STACK,
+C			BLIND.  Added COUNT, PERUSE, BLESSING, GHOSTS,
+C			SPIRITS, CLIFFS, CORPSES, OUTPUT, CHIMNEY,
+C			ZORKMID adjective, DIGBT flag.
+C 30-Jan-94	RMS	Fixed bug in error message.
+C 30-Jun-92	RMS	Changed file names to lower case.
+C 29-Jun-92	RMS	Removed extraneous declaration from SPARSE.
+C			Added dummy argument to SYNMCH.
+C
+C RDLINE-	Read input line
+C
+C Declarations
+C
+	SUBROUTINE RDLINE(INLINE,INLEN,WHO)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	CHARACTER*(TEXLNT) INLINE
+C
+	LUCVT=ICHAR('A')-ICHAR('a')		! case conversion factor.
+5	GO TO (90,10),WHO+1			! see who to prompt for.
+10	WRITE(OUTCH,50)				! prompt for game.
+50	FORMAT(' >',$)
+C
+90	READ(INPCH,100,END=5) INLINE		! get input.
+100	FORMAT(A)
+C
+	INLEN=NBLEN(INLINE)			! len w/o trailing blanks.
+	IF(INLEN.LE.0) GO TO 5			! anything left?
+	DO 400 I=1,INLEN			! convert to upper case.
+	  IF((INLINE(I:I).GE.'a').AND.(INLINE(I:I).LE.'z'))
+	&	INLINE(I:I)=CHAR(ICHAR(INLINE(I:I))+LUCVT)
+400	CONTINUE
+	PRSCON=1				! restart lex scan.
+	RETURN
+	END
+C %page
+C PARSE-	Top level parse routine
+C
+C Declarations
+C
+C This routine details on bit 0 of PRSFLG
+C
+	LOGICAL FUNCTION PARSE(INLINE,INLEN,VBFLAG)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	CHARACTER*(TEXLNT) INLINE
+	CHARACTER*(WRDLNT) OUTBUF(LEXMAX),BAKBUF(LEXMAX)
+	LOGICAL LEX,SYNMCH,DFLAG,VBFLAG
+	SAVE BAKBUF,BAKLEN
+	DATA BAKBUF(1)/'L'/,BAKLEN/1/
+C
+C	DFLAG=(PRSFLG.AND.1).NE.0
+	DFLAG=AND(PRSFLG,1).NE.0
+	PARSE=.FALSE.				! assume fails.
+	PRSA=0					! zero outputs.
+	PRSI=0
+	PRSO=0
+C
+	IF(.NOT.LEX(INLINE,INLEN,OUTBUF,OUTLEN,VBFLAG)) GO TO 1000
+	IF((OUTLEN.NE.1).OR.(OUTBUF(1).NE.'AGAIN')) GO TO 100
+	DO 50 I=1,LEXMAX			! use previous
+	  OUTBUF(I)=BAKBUF(I)
+50	CONTINUE
+	OUTLEN=BAKLEN				! buffer and length.
+100	IF(SPARSE(OUTBUF,OUTLEN,VBFLAG)) 1000,200,300	! do syn scan.
+C
+C Parse requires validation
+C
+200	IF(.NOT.VBFLAG) GO TO 350		! echo mode, force fail.
+	IF(.NOT.SYNMCH(X)) GO TO 1000		! do syn match.
+	IF(PRSO.EQ.BUNOBJ) LASTIT=BUNVEC(1)	! record for "it".
+	IF((PRSO.GT.0).AND.(PRSO.LT.BUNOBJ)) LASTIT=PRSO
+C
+C Successful parse or successful validation
+C
+300	PARSE=.TRUE.
+350	CALL ORPHAN(0,0,0,0,0,' ',0,0)		! clear orphans.
+	DO 400 I=1,LEXMAX			! save command
+	  BAKBUF(I)=OUTBUF(I)
+400	CONTINUE
+	BAKLEN=OUTLEN				! save length
+	IF(DFLAG) WRITE(OUTCH,500) PARSE,PRSA,PRSO,PRSI
+500	FORMAT(' PARSE RESULTS- ',L7,3I7)
+	RETURN
+C
+C Parse fails, disallow continuation
+C
+1000	PRSCON=1
+	IF(DFLAG) WRITE(OUTCH,500) PARSE,PRSA,PRSO,PRSI
+	RETURN
+C
+	END
+C %page
+C LEX-	Lexical analyzer
+C
+C Declarations
+C
+C This routine details on bit 1 of PRSFLG
+C
+	LOGICAL FUNCTION LEX(INLINE,INLEN,OUTBUF,OP,VBFLAG)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	CHARACTER*(TEXLNT) INLINE
+	CHARACTER*(WRDLNT) OUTBUF(LEXMAX)
+	CHARACTER*1 J
+	LOGICAL DFLAG,VBFLAG
+C
+C	DFLAG=(PRSFLG.AND.2).NE.0
+	DFLAG=AND(PRSFLG,2).NE.0
+	LEX=.FALSE.				! assume lex fails.
+	OP=0					! output ptr.
+	DO 10 I=1,LEXMAX			! clear output buf.
+	  OUTBUF(I)=' '
+10	CONTINUE
+C
+50	OP=OP+1					! adv output ptr.
+	CP=0					! char ptr=0.
+C
+200	IF(PRSCON.GT.INLEN) GO TO 2000		! end of input?
+	J=INLINE(PRSCON:PRSCON)			! no, get character,
+	IF((J.EQ.'"').OR.(J.EQ.'''')) GO TO 3000! substring?
+	PRSCON=PRSCON+1				! advance ptr.
+	IF(J.EQ.' ') GO TO 1000			! space?
+	IF((J.EQ.'.').OR.(J.EQ.';').OR.
+	&  (J.EQ.'!').or.(J.EQ.'?')) GO TO 2000	! end of command?
+	IF(J.EQ.',') GO TO 4000			! comma?
+	IF(OP.GT.LEXMAX) GO TO 5000		! too many tokens?
+	CP=CP+1					! adv char ptr.
+	IF(CP.LE.WRDLNT) OUTBUF(OP)(CP:CP)=J	! insert char in word.
+	GO TO 200
+C
+C Space.
+C
+1000	IF(CP.EQ.0) GO TO 200			! any word yet?
+	GO TO 50				! yes, adv op.
+C
+C End of input, see if partial word available.
+C
+2000	IF(PRSCON.GT.INLEN) PRSCON=1		! force parse restart.
+	IF((CP.EQ.0).AND.(OP.EQ.1)) RETURN	! any results?
+	IF(CP.EQ.0) OP=OP-1			! any last word?
+	LEX=.TRUE.
+	IF(DFLAG) WRITE(OUTCH,2020) CP,OP,PRSCON,(OUTBUF(I),I=1,OP)
+2020	FORMAT(' LEX RESULTS- ',3I7/1X,8(A,1X))
+	RETURN
+C
+C Substring, J is delimiter.
+C
+3000	IF(SUBLNT.NE.0) GO TO 3400		! already got one?
+3100	PRSCON=PRSCON+1				! skip initial quote.
+	IF(PRSCON.GT.INLEN) GO TO 3500		! any more characters?
+	IF(INLINE(PRSCON:PRSCON).EQ.' ') GO TO 3100	! skip blanks.
+	K=INDEX(INLINE(PRSCON:INLEN),J)		! find closing quote.
+	IF(K.LE.1) GO TO 3500			! none or empty?
+	SUBBUF=INLINE(PRSCON:PRSCON+K-2)	! set up substring buffer,
+	SUBLNT=K-1				! length.
+	PRSCON=PRSCON+K				! skip over string.
+	IF(DFLAG) WRITE(OUTCH,3030) SUBLNT,SUBBUF(1:SUBLNT)
+3030	FORMAT(' SUBSTRING- ',I7,' "',A,'"')
+	GO TO 1000				! treat as end of word.
+C
+3400	IF(VBFLAG) CALL RSPEAK(1046)		! multiple substrings.
+	RETURN
+C
+3500	IF(VBFLAG) CALL RSPEAK(616)		! bad substring.
+	RETURN					! fails.
+C
+C Comma.
+C
+4000	IF(CP.NE.0) OP=OP+1			! if partial word, go to next.
+	IF(OP.EQ.1) GO TO 4500			! no first word? die.
+	IF(OP.GT.LEXMAX) GO TO 5000		! too many tokens?
+	OUTBUF(OP)='AND'			! insert 'AND'.
+	GO TO 50				! start new word
+C
+4500	IF(VBFLAG) CALL RSPEAK(1047)		! misplaced comma.
+	RETURN
+C
+C Too many tokens.
+C
+5000	IF(VBFLAG) CALL RSPEAK(1048)		! too many tokens.
+	RETURN
+C
+	END
+C %page
+C SPARSE-	Start of parse
+C
+C Declarations
+C
+C This routine details on bit 2 of PRSFLG
+C
+	INTEGER FUNCTION SPARSE(LBUF,LLNT,VBFLAG)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	CHARACTER*(WRDLNT) LBUF(LEXMAX),WORD,LCWORD,LCIFY
+	CHARACTER*(WRDLNT+2) LCWRD1
+	LOGICAL LIT,DFLAG,VBFLAG,ANDFLG,BUNFLG
+	INTEGER OBJVEC(2),PRPVEC(2)
+	EQUIVALENCE (OBJVEC(1),OBJ1),(PRPVEC(1),PREP1)
+C %page
+C SPARSE, PAGE 7
+C
+C Set up for parsing
+C
+	SPARSE=-1				! assume parse fails.
+	ADJ=0					! clear parts holders.
+	ACT=0
+	PREP=0
+	PPTR=0
+	OBJ1=0
+	OBJ2=0
+	PREP1=0
+	PREP2=0
+	LOBJ=0
+	ANDFLG=.FALSE.
+	BUNFLG=.FALSE.
+C	DFLAG=(PRSFLG.AND.4).NE.0
+	DFLAG=AND(PRSFLG,4).NE.0
+C %page
+C SPARSE, PAGE 8
+C
+C Now loop over input buffer of lexical tokens.
+C
+	I=0
+10	I=I+1					! do 1000 i=1,llnt
+	  WORD=LBUF(I)				! get current token.
+	  ERRVOC=0				! assume won't find
+	  IF(WORD.EQ.' ') GO TO 1000		! blank? ignore.
+	  IF(WORD.EQ.'AND') GO TO 1500		! 'AND'?
+	  IF((WORD.EQ.'EXCEPT').OR.(WORD.EQ.'BUT')) GO TO 2500
+C
+C Check for buzz word
+C
+	  DO 50 J=1,BWMAX
+	    IF(WORD.EQ.BWORD(J)) GO TO 1000	! if match, ignore.
+50	  CONTINUE
+C
+C Check for action or direction
+C
+	  J=1					! check for action.
+	  DO 70 K=1,VWMAX
+	    IF(VWORD(K)(1:1).EQ.'*') GO TO 65	! synonym?
+	    IF(WORD.EQ.VWORD(K)) GO TO 2000	! match to base word?
+	    J=J+VVOC(J)+1			! skip over syntax.
+	    GO TO 70
+65	    IF(WORD.EQ.VWORD(K)(2:WRDLNT)) GO TO 2000 ! synonym match?
+70	  CONTINUE
+C
+75	  IF((ADJ.NE.0).OR.(PREP.NE.0).OR.(OBJ1.NE.0)) GO TO 200
+	  IF(ACT.EQ.0) GO TO 80			! any verb yet?
+C	  IF((VVOC(ACT+1).AND.SVMASK).NE.WALKW) GO TO 200	! walk?
+	  IF(AND(VVOC(ACT+1),SVMASK).NE.WALKW) GO TO 200	! walk?
+80	  DO 100 J=1,DWMAX			! then chk for dir.
+	    IF(WORD.EQ.DWORD(J)) GO TO 3000	! match to direction?
+100	  CONTINUE
+C
+C Not an action, check for preposition, adjective, or object.
+C
+200	  DO 250 J=1,PWMAX			! look for preposition.
+	    IF(WORD.EQ.PWORD(J)) GO TO 4000	! match to preposition?
+250	  CONTINUE
+C
+	  J=1					! look for adjective.
+	  DO 350 K=1,AWMAX
+	    IF(WORD.EQ.AWORD(K)) GO TO 5000	! match to adjective?
+300	    J=J+1				! advance to next entry.
+	    IF(AVOC(J).LT.0) GO TO 300		! found next entry yet?
+350	  CONTINUE
+C
+400	  J=1					! look for object.
+	  DO 550 K=1,OWMAX
+	    IF(WORD.EQ.OWORD(K)) GO TO 6000	! match to object?
+500	    J=J+1				! advance to next entry.
+	    IF(OVOC(J).LT.0) GO TO 500		! found next entry yet?
+550	  CONTINUE
+C
+C Not recognizable
+C
+	  IF(.NOT.VBFLAG) RETURN		! if mute, return
+	  LCWORD=LCIFY(WORD,1)			! convert to lower case
+	  WRITE(OUTCH,600) LCWORD(1:NBLEN(LCWORD)) ! don't recognize
+600	  FORMAT(' I don''t understand "',A,'".')
+	  CALL RSPEAK(ERRVOC)			! if extra verb, say so
+800	  TELFLG=.TRUE.				! something said.
+	  BUNSUB=0				! no valid EXCEPT clause.
+	  RETURN
+C %page
+C SPARSE, PAGE 9
+C
+1000	IF(I.LT.LLNT) GO TO 10			! end of do loop
+C
+C At end of parse, check for:
+C	1. dangling adjective
+C	2. bunched object
+C	3. simple directions
+C	4. orphan preposition
+C	5. dangling preposition
+C
+	IF(ADJ.NE.0) GO TO 4500			! dangling adjective?
+	IF(BUNFLG) OBJ1=BUNOBJ			! bunched object?
+	IF(BUNFLG.AND.(BUNSUB.NE.0).AND.(BUNLNT.EQ.0))
+	&	GO TO 13200			! except for nothing?
+C	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no action, take orphan.
+	IF(ACT.EQ.0) ACT=AND(OFLAG,OACT)		! if no action, take orphan.
+	IF(ACT.EQ.0) GO TO 10000		! no action, punt.
+C	IF(((VVOC(ACT+1).AND.SVMASK).NE.WALKW).OR.(OBJ1.LT.XMIN))
+	IF((AND(VVOC(ACT+1),SVMASK).NE.WALKW).OR.(OBJ1.LT.XMIN))
+	&	GO TO 1100			! simple direction?
+	IF ((OBJ2.NE.0).OR.(PREP1.NE.0).OR.(PREP2.NE.0))
+	&	GO TO 1050			! no extra junk?
+	PRSA=WALKW				! yes, win totally.
+	PRSO=OBJ1
+	SPARSE=1				! special return value.
+	RETURN
+C
+1050	IF(VBFLAG) CALL RSPEAK(618)		! direction+junk, fail.
+	GO TO 800				! clean up state.
+C
+1100	IF((OFLAG.NE.0).AND.(OPREP.NE.0).AND.(PREP.EQ.0).AND.
+	&	(OBJ1.NE.0).AND.(OBJ2.EQ.0).AND.(ACT.EQ.OACT))
+	&	GO TO 11000
+C
+	IF(PREP.EQ.0) GO TO 1200		! if dangling prep,
+	IF(PPTR.EQ.0) GO TO 12000		! and no object, die;
+	IF(PRPVEC(PPTR).NE.0) GO TO 12000	! and prep already, die;
+	PRPVEC(PPTR)=PREP			! cvt to 'pick up frob'.
+1200	SPARSE=0				! parse succeeds.
+	IF(DFLAG) WRITE(OUTCH,1310) ACT,OBJ1,OBJ2,PREP1,PREP2
+1310	FORMAT(' SPARSE RESULTS- ',5I7)
+	RETURN
+C %page
+C SPARSE, PAGE 10
+C
+C 1500--	AND
+C
+1500	IF(ADJ.NE.0) GO TO 4100			! dangling adj? treat as obj.
+	IF((PREP.NE.0).OR.(PPTR.NE.1)) GO TO 8000	! prep or not dir obj?
+	ANDFLG=.TRUE.				! flag 'AND'.
+	GO TO 1000				! done.
+C
+C 2000--	Action
+C
+2000	IF(ACT.EQ.0) GO TO 2100			! got one already?
+	ERRVOC=624				! flag for error report.
+	GO TO 75				! try to construe differently.
+C
+2100	ACT=J					! save index to verb.
+	OACT=0					! no orphan.
+	ANDFLG=.FALSE.				! clear 'AND' flag.
+	IF(DFLAG) WRITE(OUTCH,2020) J
+2020	FORMAT(' SPARSE- ACT AT ',I6)
+	GO TO 1000				! done.
+C
+C 2500--	EXCEPT/BUT
+C
+2500	IF(ADJ.NE.0) GO TO 4100			! dangling adjective?
+	IF(ANDFLG.OR.BUNFLG.OR.(PPTR.NE.1).OR.
+	&	(I.GE.LLNT)) GO TO 13000	! not in right place?
+	IF(LBUF(I+1).NE.'FOR') GO TO 2600	! except for?
+	I=I+1					! skip over.
+	IF(I.GE.LLNT) GO TO 13000		! out of text?
+2600	IF((OBJ1.NE.EVERY).AND.(OBJ1.NE.VALUA).AND.
+	&  (OBJ1.NE.POSSE)) GO TO 13100		! "collective" EXCEPT?
+	ANDFLG=.TRUE.				! force next object
+	BUNFLG=.TRUE.				! into bunch vector.
+	BUNLNT=0				! start at top.
+	BUNSUB=OBJ1				! remember collective.
+	GO TO 1000				! on to next word.
+C
+C 3000--	Direction
+C 		Don't need to check for ambiguous use as adjective;
+C		only possible overlap is north/south/east/west wall;
+C		and global wall takes is found if no adjective given.
+C
+3000	OBJ=DVOC(J)				! save direction.
+	ACT=1					! find value for action.
+3600	IF(VVOC(ACT).EQ.0) CALL BUG(310,ACT)	! can't find walk.
+C	IF((VVOC(ACT+1).AND.SVMASK).EQ.WALKW) GO TO 6300 ! treat as obj.
+	IF(AND(VVOC(ACT+1),SVMASK).EQ.WALKW) GO TO 6300 ! treat as obj.
+	ACT=ACT+VVOC(ACT)+1			! to next syntax entry.
+	GO TO 3600
+C
+C 4000--	Preposition (or dangling adjective at end of parse)
+C
+4000	IF(ADJ.EQ.0) GO TO 4600			! dangling adjective?
+4100	I=I-1					! back up parse stream.
+4500	WORD=AWORD(ADJPTR)			! get adjective string.
+	ADJ=0					! now an object.
+	GO TO 400				! go search object words.
+C
+4600	IF(ANDFLG) GO TO 8000			! 'AND' pending?
+	IF(PREP.NE.0) GO TO 1000		! already have one? ignore.
+	PREP=PVOC(J)				! no, get index.
+	IF(DFLAG) WRITE(OUTCH,4030) J
+4030	FORMAT(' SPARSE- PREP AT ',I6)
+	GO TO 1000
+C
+C 5000--	Adjective
+C
+5000	ADJ=J					! save adjective.
+	ADJPTR=K				! save string pointer.
+	IF((I.LT.LLNT).OR.(OFLAG.EQ.0).OR.(ONAME.EQ.' '))
+	&	GO TO 1000			! last word + orphan string?
+	IF(DFLAG) WRITE(OUTCH,5040) ADJ,ONAME	! have orphan.
+5040	FORMAT(' SPARSE- ADJ AT ',I6,' ORPHAN= ',A)
+	WORD=ONAME				! get object string.
+	GO TO 400				! go search object names.
+C
+C 6000--	Object
+C
+6000	OBJ=GETOBJ(J,ADJ,0)			! identify object.
+	IF(DFLAG) WRITE(OUTCH,6010) J,OBJ
+6010	FORMAT(' SPARSE- OBJ AT ',I6,'  OBJ= ',I6)
+	IF(OBJ.LE.0) GO TO 7000			! if le, couldnt.
+	IF(OBJ.NE.ITOBJ) GO TO 6100		! "it"?
+C	IF((OFLAG.AND.OOBJ1).NE.0) LASTIT=OFLAG.AND.OOBJ1	! orphan?
+	IF(AND(OFLAG,OOBJ1).NE.0) LASTIT=AND(OFLAG,OOBJ1)	! orphan?
+	OBJ=GETOBJ(0,0,LASTIT)			! find it.
+	IF(OBJ.LE.0) GO TO 7500			! if le, couldnt.
+C
+6100	IF(PREP.NE.9) GO TO 6200		! "of" obj?
+	IF((LOBJ.EQ.OBJ).OR.(LOBJ.EQ.OCAN(OBJ))) GO TO 6500	! same as prev?
+	IF((LOBJ.EQ.EVERY).AND.((OBJ.EQ.VALUA).OR.(OBJ.EQ.POSSE)))
+	&	GO TO 6350			! all of "collective"?
+6150	IF(VBFLAG) CALL RSPEAK(601)		! doesn't work
+	GO TO 800				! clean up state.
+C
+6200	IF(.NOT.ANDFLG) GO TO 6300		! 'AND' pending?
+	IF(BUNFLG) GO TO 6250			! first object?
+	BUNVEC(1)=OBJVEC(PPTR)			! put preceding obj in vector.
+	BUNLNT=1
+	BUNFLG=.TRUE.				! flag bunch of objects.
+	BUNSUB=0				! no EXCEPT/BUT clause.
+6250	BUNLNT=BUNLNT+1				! advance bunch pointer.
+	IF(BUNLNT.GT.BUNMAX) GO TO 9000		! too many objects?
+	BUNVEC(BUNLNT)=OBJ			! add to bunch vector.
+	GO TO 6500
+C
+6300	IF(PPTR.EQ.2) GO TO 9000		! too many objs?
+	PPTR=PPTR+1
+	PRPVEC(PPTR)=PREP
+6350	OBJVEC(PPTR)=OBJ			! stuff into vector.
+6500	PREP=0
+	ADJ=0
+	ANDFLG=.FALSE.				! no pending 'AND'.
+	LOBJ=OBJ				! record last object.
+	GO TO 1000
+C %page
+C SPARSE, PAGE 11
+C
+C 7000--	Unidentifiable object (index into OVOC is J)
+C
+7000	LCWORD=LCIFY(WORD,1)			! convert obj to lower case.
+	LCWRD1=' '				! assume no adjective
+	IF(ADJ.NE.0) LCWRD1=' '//LCIFY(AWORD(ADJPTR),1)//' '
+	IF(OBJ.LT.0) GO TO 7200			! ambiguous or unreachable?
+	IF(LIT(HERE)) GO TO 7100		! lit?
+	IF(VBFLAG) CALL RSPEAK(579)		! not lit, report.
+	GO TO 800				! go clean up state.
+C
+7100	IF(VBFLAG) WRITE(OUTCH,7110)
+	&	LCWRD1(1:NBLEN(LCWRD1)+1),LCWORD(1:NBLEN(LCWORD))
+7110	FORMAT(' I can''t see any',A,A,' here.')
+	GO TO 800				! go clean up state.
+C
+7200	IF(OBJ.NE.-10000) GO TO 7300		! inside vehicle?
+	IF(VBFLAG) CALL RSPSUB(620,ODESC2(AVEHIC(WINNER)))
+	GO TO 800				! go clean up state.
+C
+C 7300	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no act, get orphan.
+7300	IF(ACT.EQ.0) ACT=AND(OFLAG,OACT)		! if no act, get orphan.
+	CALL ORPHAN(-1,ACT,PREP1,OBJ1,PREP,WORD,0,0)	! orphan the world.
+	IF(VBFLAG) WRITE(OUTCH,7310)
+	&	LCWRD1(1:NBLEN(LCWRD1)+1),LCWORD(1:NBLEN(LCWORD))
+7310	FORMAT(' Which',A,A,' do you mean?')
+	GO TO 800				! go clean up state.
+C
+C 7500--	Unidentifiable 'IT' (last direct object is LASTIT).
+C
+7500	IF(OBJ.LT.0) GO TO 7200			! if lt, must be unreachable.
+	IF(LIT(HERE)) GO TO 7600		! lit?
+	IF(VBFLAG) CALL RSPEAK(1076)		! lose.
+	GO TO 800				! go clean up state.
+C
+7600	IF(VBFLAG) CALL RSPSUB(1077,ODESC2(LASTIT))	! don't see it.
+	GO TO 800				! go clean up state.
+C
+C 8000--	Misplaced 'AND'.
+C
+8000	IF(VBFLAG) CALL RSPEAK(1049)
+	GO TO 800				! go clean up state.
+C
+C 9000--	Too many objects.
+C
+9000	IF(VBFLAG) CALL RSPEAK(617)
+	GO TO 800				! go clean up state.
+C
+C 10000--	No action, punt.
+C
+10000	IF(OBJ1.EQ.0) GO TO 10100		! any direct object?
+	IF(VBFLAG) CALL RSPSUB(621,ODESC2(OBJ1))	! what to do?
+	CALL ORPHAN(-1,0,PREP1,OBJ1,0,' ',0,0)
+	RETURN
+C
+10100	IF(VBFLAG) CALL RSPEAK(622)		! huh?
+	GO TO 800				! go clean up state.
+C
+C 11000--	Orphan preposition.  Conditions are
+C		OBJ1.NE.0, OBJ2=0, PREP=0, ACT=OACT
+C
+11000	IF(OOBJ1.NE.0) GO TO 11500		! orphan object?
+	PREP1=OPREP				! no, just use prep.
+	GO TO 1200
+C
+11500	OBJ2=OBJ1				! yes, use as direct obj.
+	PREP2=OPREP
+	OBJ1=OOBJ1
+	PREP1=OPREP1
+	GO TO 1200
+C
+C 12000--	True hanging preposition, no objects yet.
+C
+12000	CALL ORPHAN(-1,ACT,0,0,PREP,' ',0,0)	! orphan prep.
+	GO TO 1200
+C
+C 13000--	EXCEPT/BUT errors.
+C
+13000	LCWORD=LCIFY(WORD,1)
+	IF(VBFLAG) WRITE(OUTCH,13010) LCWORD(1:NBLEN(LCWORD))	! wrong place.
+13010	FORMAT(' Misplaced "',A,'".')
+	GO TO 800				! go clean up state.
+C
+13100	LCWORD=LCIFY(WORD,2)				! wrong case.
+	IF(VBFLAG) WRITE(OUTCH,13110) LCWORD(1:NBLEN(LCWORD))	! not coll.
+13110	FORMAT(' "',A,'" can only be used with "everything",',
+	& ' "valuables", or "possessions".')
+	GO TO 800				! go clean up state.
+C
+13200	IF(VBFLAG) CALL RSPEAK(619)		! no objects.
+	GO TO 800				! go clean up state.
+C
+	END
+C %page
+	BLOCK DATA BAR
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C SPARSE, PAGE 2
+C
+C Vocabularies
+C
+C Buzz words--	ignored in syntactic processing
+C
+	DATA BWORD/'BY','IS','A','AN','THE','AM','ARE',
+	&	'TODAY','MY','YOUR','OUR','HIS'/
+C
+C Prepositions--	maps prepositions to indices
+C
+	DATA PWORD/'OVER','WITH','USING','AT','TO',
+	&	'IN','INSIDE','INTO','DOWN','UP',
+	&	'UNDER','OF','ON','OFF','FOR',
+	&	'FROM','OUT','THROUGH',' ',' '/
+C
+	DATA PVOC/1,2,2,3,4,
+	&	5,5,5,6,7,
+	&	8,9,10,11,12,
+	&	13,13,14,0,0/
+C
+C Directions--	maps directions to indices
+C
+	DATA DWORD/'N','NORTH','S','SOUTH',
+	& 'E','EAST','W','WEST',
+	& 'SE','SW','NE','NW',
+	& 'U','UP','D','DOWN',
+	& 'LAUNCH','LAND','EXIT','OUT',
+	& 'TRAVEL','IN','CROSS',' ',' '/
+C
+	DATA DVOC/XNORTH,XNORTH,XSOUTH,XSOUTH,
+	& XEAST,XEAST,XWEST,XWEST,
+	& XSE,XSW,XNE,XNW,
+	& XUP,XUP,XDOWN,XDOWN,
+	& XLAUN,XLAND,XEXIT,XEXIT,
+	& XCROSS,XENTER,XCROSS,0,0/
+C %page
+C SPARSE, PAGE 3
+C
+C Adjectives--	maps adjectives to object numbers
+C
+C Each string entry in aword corresponds to a list of one or more
+C object numbers in AVOC.  Object entries are delimited by the first
+C object being positive, and all subsequent objects in the same entry
+C being negative.
+C
+	DATA (AWORD(I),I=1,40) /
+	& 'BROWN','ELONGATE','HOT','PEPPER',
+	& 'VITREOUS','JADE','HUGE','ENORMOUS',
+	& 'TROPHY','CLEAR','LARGE','NASTY',
+	& 'ELVISH','BRASS','BROKEN','ORIENTAL',
+	& 'BLOODY','RUSTY','BURNED-O','DEAD',
+	& 'OLD','LEATHER','PLATINUM','PEARL',
+	& 'MOBY','CRYSTAL','GOLD','IVORY',
+	& 'SAPPHIRE','WOODEN','WOOD','STEEL',
+	& 'DENTED','FANCY','ANCIENT','SMALL',
+	& 'BLACK','TOUR','VISCOUS','VICIOUS'/
+C
+	DATA (AVOC(I),I=1,112) /
+	& 1,-81,-133,1,3,-190,3,
+	& 4,6,8,8,-122,
+	& 9,10,12,-26,-47,-95,-96,-123,-133,-135,-144,-145,
+	&	-150,-176,-191,13,-19,
+	& 14,15,-16,-46,-156,-190,16,-22,-38,-92,-113,-155,-158,17,
+	& 20,24,-205,22,22,
+	& 25,-41,-44,-45,-208,25,26,27,
+	& 31,32,-126,-206,-209,33,-85,-104,-157,-158,-188,34,
+	& 37,38,-67,-75,-93,-136,-137,-165,-173,-174,-175,-197,-204,
+	&	38,-67,-136,-137,-165,-173,-174,-175,
+	&	39,-105,-124,-125,-189,
+	& 39,40,41,-44,5,-46,-52,-53,-89,-102,-103,-153,-187,
+	& 47,-162,49,55,62/
+C
+	DATA (AWORD(I),I=41,80) /
+	& 'GLASS','TRAP','FRONT','STONE',
+	& 'MANGLED','RED','YELLOW','BLUE',
+	& 'VAMPIRE','MAGIC','SEAWORTH','TAN',
+	& 'SHARP','WICKER','CLOTH','BRAIDED',
+	& 'GAUDY','SQUARE','CLAY','SHINY',
+	& 'THIN','GREEN','PURPLE','WHITE',
+	& 'MARBLE','COKE','EMPTY','ROUND',
+	& 'TRIANGUL','RARE','OBLONG','EAT-ME',
+	& 'EATME','ORANGE','ECCH','ROCKY',
+	& 'SHEER','200','NEAT','SHIMMERI'/
+C
+	DATA (AVOC(I),I=113,179) /
+	& 10,-126,-132,-206,-209,66,68,69,-150,-278,
+	& 	72,-124,79,-94,-140,-161,-170,-171,-190,-209,
+	&	80,-159,82,-112,-114,-141,-206,
+	& 83,90,-281,90,91,
+	& 92,98,100,101,
+	& 108,109,-127,109,110,
+	& 110,77,-115,-143,116,117,-126,-147,-160,-266,
+	& 119,121,121,128,
+	& 129,134,135,138,
+	& 138,139,141,146,
+	& 146,148,148,151/
+C
+	DATA (AWORD(I),I=81,120) /
+	& 'ZURICH','BIRDS','ENCRUSTE','BEAUTIFU',
+	& 'CLOCKWOR','MECHANIC','MAHOGANY','PINE',
+	& 'LONG','CENTER','SHORT','T',
+	& 'COMPASS','BRONZE','CELL','LOCKED',
+	& 'SUN','BARE','SONG','NORTH',
+	& 'NORTHERN','SOUTH','SOUTHERN','EAST',
+	& 'EASTERN','WEST','WESTERN','DUNGEON',
+	& 'FREE','GRANITE','LOWERED','VOLCANO',
+	& 'MAN-SIZE','METAL','PLASTIC','SILVER',
+	& 'USED','USELESS','SEEING','ONE-EYED'/
+C
+	DATA (AVOC(I),I=180,238) /
+	& 152,153,-154,-155,154,-155,86,-156,
+	& 157,-158,157,-158,163,164,
+	& 166,166,167,168,
+	& 169,-275,172,174,-175,174,
+	& 177,259,267,269,
+	& 269,270,270,271,
+	& 271,67,-272,67,-272,279,
+	& 195,-262,265,36,111,
+	& 93,64,-99,-200,-201,77,-87,-88,-90,59,
+	& 22,22,126,-206,-209,58/
+C
+	DATA (AWORD(I),I=121,160) /
+	& 'HOLY','HAND-HEL','UNRUSTY','PLAIN',
+	& 'PRICELES','SANDY','GIGANTIC','LINE-PRI',
+	& 'FLATHEAD','FINE','SHADY','SUSPICIO',
+	& 'CROSS','TOOL','CONTROL','DON',
+	& 'WOODS','GOLDEN','OAK','BARRED',
+	& 'DUSTY','NARROW','IRON','WELCOME',
+	& 'RUBBER','SKELETON','ALL','ZORKMID',
+	& 12*' '/
+C
+	DATA (AVOC(I),I=239,282) /
+	& 43,89,13,13,
+	& 104,192,122,122,
+	& 118,91,61,61,
+	& 165,193,194,196,
+	& 196,157,-158,197,198,-210,
+	& 204,199,205,207,
+	& 207,23,253,-254,104,-148,
+	& 12*0/
+C %page
+C SPARSE, PAGE 4
+C
+C OBJECTS--	Maps objects to object indices,
+C 		same format as AVOC.
+C
+	DATA (OWORD(I),I=1,40) /
+	& 'BAG','SACK','GARLIC','CLOVE',
+	& 'FOOD','SANDWICH','LUNCH','DINNER',
+	& 'GUNK','PIECE','SLAG','COAL',
+	& 'PILE','HEAP','FIGURINE','MACHINE',
+	& 'PDP10','VAX','DRYER','LID',
+	& 'DIAMOND','CASE','BOTTLE','CONTAINE',
+	& 'WATER','QUANTITY','LIQUID','H2O',
+	& 'ROPE','HEMP','COIL','KNIFE',
+	& 'BLADE','SWORD','ORCHRIST','GLAMDRIN',
+	& 'LAMP','LANTERN','RUG','CARPET'/
+C
+	DATA (OVOC(I),I=1,71) /
+	& 1,-25,-100,1,2,2,
+	& 3,3,3,3,
+	& 4,-55,4,-143,-186,-282,4,5,
+	& 5,-18,-38,-72,-73,-87,-88,-122,-148,5,6,7,
+	& 7,7,7,7,-200,-201,
+	& 8,9,-123,10,-121,10,
+	& 11,-273,11,-273,11,-273,11,-273,
+	& 12,-101,-282,12,12,-110,13,-24,
+	& 13,-14,14,14,14,
+	& 15,-16,-22,15,-16,-22,17,17/
+C
+	DATA (OWORD(I),I=41,80) /
+	& 'LEAVES','LEAF','TROLL','AXE',
+	& 'PRAYER','KEYS','KEY','SET',
+	& 'BONES','SKELETON','BODY','COINS',
+	& 'BAR','NECKLACE','PEARLS','MIRROR',
+	& 'ICE','MASS','GLACIER','RUBY',
+	& 'TRIDENT','FORK','COFFIN','CASKET',
+	& 'TORCH','CAGE','DUMBWAIT','BASKET',
+	& 'BRACELET','JEWEL','TIMBER','BOX',
+	& 'STRADIVA','VIOLIN','ENGRAVIN','INSCRIPT',
+	& 'GHOST','SPIRIT','FIEND','GRAIL'/
+C
+	DATA (OVOC(I),I=72,130) /
+	& 18,18,19,-111,20,
+	& 44,-47,23,23,-205,23,
+	& 21,21,21,-72,-73,25,
+	& 26,-165,-168,27,27,28,-29,-276,
+	& 30,30,30,31,
+	& 32,32,33,33,
+	& 34,35,-36,-124,-125,35,-36,35,-36,-98,-113,
+	& 37,37,38,39,-53,-105,
+	& 40,40,41,41,-44,
+	& 42,42,42,43/
+C
+	DATA (OWORD(I),I=81,120) /
+	& 'TRUNK','CHEST','BELL','BOOK',
+	& 'BIBLE','GOODBOOK','CANDLES','PAIR',
+	& 'GUIDEBOO','GUIDE','PAPER','NEWSPAPE',
+	& 'ISSUE','REPORT','MAGAZINE','NEWS',
+	& 'MATCHBOO','MATCH','MATCHES','ADVERTIS',
+	& 'PAMPHLET','LEAFLET','BOOKLET','MAILBOX',
+	& 'TUBE','TOOTHPAS','PUTTY','MATERIAL',
+	& 'GLUE','WRENCH','SCREWDRI','CYCLOPS',
+	& 'MONSTER','CHALICE','CUP','GOBLET',
+	& 'PAINTING','ART','CANVAS','PICTURE'/
+C
+	DATA (OVOC(I),I=131,182) /
+	& 45,45,-193,46,-190,47,-49,-114,-115,-116,-117,
+	& 47,47,48,48,
+	& 49,49,50,-122,-143,-186,50,
+	& 50,50,50,50,
+	& 51,51,51,52,
+	& 52,52,52,53,
+	& 54,54,55,55,
+	& 55,56,57,58,
+	& 58,59,59,59,
+	& 60,-149,60,-149,60,60/
+C
+	DATA (OWORD(I),I=121,160) /
+	& 'WORK','MASTERPI','THIEF','ROBBER',
+	& 'CRIMINAL','BANDIT','CROOK','GENT',
+	& 'GENTLEMA','MAN','INDIVIDU','BAGMAN',
+	& 'STILETTO','WINDOW','BOLT','NUT',
+	& 'GRATE','GRATING','DOOR','TRAP-DOO',
+	& 'SWITCH','HEAD','CORPSE','BODIES',
+	& 'DAM','GATES','GATE','FCD',
+	& 'RAIL','RAILING','BUTTON','BUBBLE',
+	& 'LEAK','DRIP','HOLE','BAT',
+	& 'RAINBOW','POT','STATUE','SCULPTUR'/
+C
+	DATA (OVOC(I),I=183,258) /
+	& 60,60,61,61,
+	& 61,61,61,61,
+	& 61,61,61,61,
+	& 62,63,-198,-210,64,64,
+	& 65,65,66,-67,-68,-69,-119,-164,
+	&	-172,-173,-174,-175,-189,-197,66,
+	& 70,-79,-80,-81,-82,-170,71,-120,72,-73,72,-73,
+	& 74,74,-76,74,-76,74,
+	& 75,75,76,-79,-80,-81,-82,-127,-128,-129,-170,-176,77,
+	& 78,-191,78,78,-107,-202,-203,83,
+	& 84,85,86,86/
+C
+	DATA (OWORD(I),I=161,200) /
+	& 'ROCK','BOAT','PLASTIC','PUMP',
+	& 'AIRPUMP','AIR-PUMP','LABEL','FINEPRIN',
+	& 'STICK','BARREL','BUOY','EMERALD',
+	& 'SHOVEL','GUANO','CRAP','SHIT',
+	& 'HUNK','BALLOON','RECEPTAC','WIRE',
+	& 'HOOK','ZORKMID','COIN','SAFE',
+	& 'CARD','NOTE','SLOT','CROWN',
+	& 'BRICK','FUSE','GNOME','STAMP',
+	& 'TOMB','CRYPT','GRAVE','HEADS',
+	& 'POLES','IMPLEMEN','LOSERS','COKES'/
+C
+	DATA (OVOC(I),I=259,312) /
+	& 86,87,-88,-90,87,-88,-90,89,
+	& 89,89,91,-112,91,
+	& 92,93,94,95,
+	& 96,97,97,97,
+	& 97,98,-113,99,101,-110,
+	& 102,-103,104,-148,104,105,
+	& 106,-188,106,-186,107,-187,108,
+	& 109,110,111,-152,118,-196,
+	& 119,119,119,120,
+	& 120,120,120,121/
+C
+	DATA (OWORD(I),I=201,240) /
+	& 'LISTINGS','OUTPUT','PRINTOUT','SPHERE',
+	& 'BALL','ETCHING','WALLS','WALL',
+	& 'FLASK','POOL','SEWAGE','TIN',
+	& 'SAFFRON','SPICES','TABLE','POST',
+	& 'POSTS','BUCKET','CAKE','ICING',
+	& 'ROBOT','ROBBY','C3PO','R2D2',
+	& 'PANEL','POLE','TBAR','T-BAR',
+	& 'ARROW','POINT','BEAM','DIAL',
+	& 'SUNDIAL','1','ONE','2',
+	& 'TWO','3','THREE','4'/
+C
+	DATA (OVOC(I),I=313,387) /
+	& 122,122,122,126,-206,-209,
+	& 126,130,-131,130,-131,-257,130,-131,-159,
+	&	-160,-161,-162,-163,-164,-257,-265,-269,-270,-271,-272,
+	& 132,133,133,134,
+	& 134,134,135,-204,136,-166,-167,
+	& 136,137,138,-139,-140,-141,139,-140,-141,
+	& 142,142,142,142,
+	& 159,-160,-161,-162,-163,-164,-194,-277,120,-166,-167,168,168,
+	& 169,169,171,177,
+	& 177,178,178,179,
+	& 179,180,180,181/
+C
+	DATA (OWORD(I),I=241,280) /
+	& 'FOUR','5','FIVE','6',
+	& 'SIX','7','SEVEN','8',
+	& 'EIGHT','WARNING','SLIT','IT',
+	& 'THAT','THIS','ME','MYSELF',
+	& 'CRETIN','ALL','EVERYTHI','TREASURE',
+	& 'VALUABLE','SAILOR','TEETH','GRUE',
+	& 'HAND','HANDS','LUNGS','AIR',
+	& 'AVIATOR','FLYER','TREE','CLIFF',
+	& 'LEDGE','PORTRAIT','STACK','BILLS',
+	& 'VAULT','CUBE','LETTERIN','CURTAIN'/
+C
+	DATA (OVOC(I),I=388,432) /
+	& 181,182,182,183,
+	& 183,184,184,185,
+	& 185,186,187,250,
+	& 250,250,251,251,
+	& 251,252,252,253,
+	& 253,255,256,258,
+	& 259,259,260,260,
+	& 261,261,144,-145,-268,146,-147,
+	& 146,149,122,-148,148,
+	& 150,150,67,-150,151/
+C
+	DATA (OWORD(I),I=281,320) /
+	& 'LIGHT','NEST','EGG','BAUBLE',
+	& 'CANARY','BIRD','SONGBIRD','GUARD',
+	& 'GUARDIAN','ROSE','STRUCTUR','CHANNEL',
+	& 'KEEPER','LADDER','BROCHURE','WISH',
+	& 'GROUND','EARTH','SAND','WELL',
+	& 'SLIDE','CHUTE','HOUSE','BOTTLES',
+	& 'BUNCH','PALANTIR','STONE','FLINT',
+	& 'POSSESSI','GOOP','BEACH','GRIP',
+	& 'HANDGRIP','PRINT','ETCHINGS','CRACK',
+	& 'KEYHOLE','MAT','STOVE','PLATINUM'/
+C
+	DATA (OVOC(I),I=433,485) /
+	& 15,-151,-171,153,154,-155,156,
+	& 157,-158,267,267,274,
+	& 274,275,276,278,
+	& 279,280,195,-262,263,
+	& 264,264,192,-264,281,
+	& 283,283,266,121,
+	& 121,126,-206,-209,126,-206,-209,51,
+	& 254,133,192,167,
+	& 167,91,-122,130,-131,199,
+	& 202,-203,207,208,26/
+C
+	DATA (OWORD(I),I=321,360) /
+	& 'HIM','SELF','GOLD','SAPPHIRE',
+	& 'IVORY','MASTER','CANDLE','JADE',
+	& 'SCREEN','BLESSING','GHOSTS','SPIRITS',
+	& 'CORPSES','JEWELS','CLIFFS','CHIMNEY',
+	& 24*' '/
+C
+	DATA (OVOC(I),I=486,529) /
+	& 250,251,85,-104,37,
+	& 34,279,48,6,
+	& 151,263,42,42,
+	& 72,-73,37,-45,146,-147,211,
+	& 24*0/
+C %page
+C SPARSE, PAGE 5
+C
+C VERBS--	Maps verbs to syntax slots
+C
+C Vocabulary entries are variable length and consist of one
+C or more words.  If an entry contains more than one word,
+C all but the last are prefaced with an '*'.  The preferred
+C string for error messages should be first.
+C
+C Syntax entries consist of a flag word followed by 0, 1, or 2
+C Object descriptions.  The flag word has the following format--
+C
+C bit <14>	if 1, syntax includes direct object
+C bit <13>	if 1, syntax includes indirect object
+C bit <12>	if 1, direct object is implicit (standard form)
+C bit <11>	if 1, direct and indirect object must be swapped
+C			after syntax processing
+C bit <10>	if 1, this is default syntax for orphanery
+C bits <8:0>	verb number for VAPPLI
+C
+C Object descriptions consist of a flag word and two FWIM words.
+C The flag word has the following format--
+C
+C bit <14>	if 1, search adventurer for object
+C bit <13>	if 1, search room for object
+C bit <12>	if 1, parser will try to take object
+C bit <11>	if 1, adventurer must have object
+C bit <10>	if 1, qualifying bits (normally -1,-1) are same
+C			as FWIM bits
+C bit <9>	if 1, object must be reachable
+C bits <8:0>	preposition number for SYNMCH
+C
+C The FWIM words have the same format as the two object flag words.
+C
+C Note that bits 12 and 11 of object descriptions actually have
+C four distinct states--
+C
+C	bit 12	bit 11	mdldesc		interpretation
+C	------	------	-------		---------------
+C
+C	  0	  0	 --		no parser action
+C	  0	  1	 HAVE		adventurer must have object
+C	  1	  0	 TRY		try to take, dont care if fail
+C	  1	  1	 TAKE		try to take, care if fail
+C
+C %page
+C SPARSE, PAGE 6
+C
+	DATA (VWORD(I),I=1,43) /
+	& 'BRIEF','VERBOSE','SUPERBRI','STAY',
+	& 'VERSION','*SWIM','*BATHE','WADE',
+	& 'GERONIMO','*ULYSSES','ODYSSEUS','*PLUGH','XYZZY',
+	& 'PRAY','TREASURE','TEMPLE','BLAST',
+	& 'SCORE','*QUIT','*GOODBYE','*Q','BYE','HELP',
+	& 'INFO','*HISTORY','UPDATE','BACK',
+	& '*MUMBLE','SIGH','*CHOMP','*LOSE',
+	& 'BARF','DUNGEON','FROBOZZ','*FOO',
+	& '*BLETCH','BAR','REPENT','*HOURS',
+	& 'SCHEDULE','WIN','*YELL','*SCREAM'/
+C
+	DATA (VVOC(I),I=1,54) /
+	& 1,70,1,71,1,72,1,73,
+	& 1,74,1,75,
+	& 1,76,1,77,1,56,
+	& 1,79,1,80,1,81,1,82,
+	& 1,83,1,84,1,40,
+	& 1,41,1,42,1,43,
+	& 1,44,
+	& 1,45,1,46,1,47,
+	& 1,48,1,49,
+	& 1,50,1,51/
+C
+	DATA (VWORD(I),I=44,86) /
+	& 'SHOUT','*HOP','SKIP','*CURSE',
+	& '*SHIT','*DAMN','FUCK','ZORK',
+	& 'WISH','SAVE','RESTORE','TIME',
+	& 'DIAGNOSE','EXORCISE','*LIST','*I','INVENTOR',
+	& 'WAIT','INCANT','*ANSWER','RESPOND','AGAIN',
+	& 'NOOBJ','*BUG','*GRIPE','COMPLAIN',
+	& '*FEATURE','*COMMENT','*IDEA','SUGGESTI',
+	& 'ROOM','*OBJECTS','OBJ','RNAME','DEFLATE',
+	& '*EXAMINE','*WHAT','DESCRIBE','FILL',
+	& '*FIND','*SEEK','*WHERE','SEE'/
+C
+	DATA (VVOC(I),I=55,120) /
+	& 1,52,1,53,
+	& 1,54,1,55,
+	& 1,169,1,149,1,150,1,90,
+	& 1,94,1,105,1,133,
+	& 1,128,1,95,1,96,1,57,
+	& 1,58,1,59,
+	& 1,60,
+	& 1,65,1,66,1,67,1,o50147,
+	& 4,o40170,o60000,-1,-1,
+	& 11,o60206,o61000,o200,0,o61002,-1,-1,
+	&	o40206,o61000,o200,0,
+	& 4,o40177,o60000,-1,-1/
+C
+	DATA (VWORD(I),I=87,131) /
+	& 'FOLLOW','*KICK','*BITE','TAUNT',
+	& 'LOWER','*PUSH','PRESS','*RING',
+	& 'PEAL','*RUB','*FEEL','*CARESS','*TOUCH',
+	& 'FONDLE','SHAKE','SPIN','*UNTIE',
+	& 'FREE','*WALK','*RUN','*PROCEED','GO','*ATTACK','*FIGHT',
+	& '*INJURE','*HIT','HURT','BOARD',
+	& '*BRUSH','CLEAN','*BURN','*IGNITE',
+	& 'INCINERA','CLIMB','CLOSE','DIG',
+	& 'DISEMBAR','*DRINK','*IMBIBE','SWALLOW',
+	& '*DROP','RELEASE','*EAT','*GOBBLE','*CONSUME'/
+C
+	DATA (VVOC(I),I=121,278) /
+	& 2,o125,o50125,1,o50153,
+	& 1,o50156,9,o50160,o40160,o61012,-1,-1,
+	&	o40241,o61010,-1,-1,
+	& 5,o52127,o70127,o61002,-1,-1,
+	& 1,o50157,1,o50171,1,o50201,
+	& 11,o42161,o61000,0,o10000,
+	&	o60242,o61000,0,o10000,o61015,-1,-1,
+	& 9,o50216,o40126,o61016,-1,-1,o40126,o61005,-1,-1,
+	& 7,o60215,o21000,0,o200,o44002,0,o1000,
+	& 4,o40202,o21000,0,2,
+	& 5,o52130,o70130,o61002,-1,-1,
+	& 7,o60211,o61000,o20,0,o64002,o10,0,
+	& 12,o40235,o20007,0,o4000,o40236,o20006,0,o4000,
+	&	o40234,o20000,0,o4000,
+	& 4,o40176,o61000,o10200,0,
+	& 21,o60131,o20005,0,o40000,o44002,4,0,
+	& 	o60131,o20016,0,o40000,o44002,4,0,
+	& 	o60131,o20000,0,o40000,o44002,4,0,
+	& 8,o40203,o20000,0,2,o40203,o20015,0,2,
+	& 4,o40210,o61000,o400,0,
+	& 25,o42221,o41000,-1,-1,
+	&	o60220,o41000,-1,-1,o61005,-1,-1,
+	&	o60220,o41000,-1,-1,o61006,-1,-1,
+	&	o60220,o41000,-1,-1,o61016,-1,-1/
+C
+	DATA (VWORD(I),I=132,172) /
+	& '*MUNCH','TASTE','*DOUSE','EXTINGUI',
+	& '*GIVE','*HAND','DONATE','*HELLO',
+	& 'HI','BLOW','INFLATE','*JUMP',
+	& 'LEAP','*KILL','*MURDER','*SLAY',
+	& '*STAB','DISPATCH','*KNOCK','RAP',
+	& 'LIGHT','LOCK','*LOOK','*L','*STARE',
+	& 'GAZE','*MELT','LIQUIFY','MOVE',
+	& '*PULL','TUG','*DESTROY','*MUNG',
+	& '*BREAK','DAMAGE','OPEN','PICK',
+	& '*PLUG','*GLUE','PATCH','*POKE'/
+C
+	DATA (VVOC(I),I=279,450) /
+	& 4,o40207,o75000,o2000,0,
+	& 4,o40174,o75000,o100,0,
+	& 11,o72222,o21004,o40,0,o64222,o21000,o40,0,
+	&	o61000,-1,-1,
+	& 2,o2227,o50227,
+	& 15,o62146,o61007,-1,-1,o61002,4,0,
+	&	o40122,o61007,-1,-1,o40165,o61005,-1,-1,
+	& 4,o70146,o61002,4,0,
+	& 5,o133,o40133,o61001,-1,-1,
+	& 7,o60213,o21000,0,o200,o44002,0,o1000,
+	& 12,o42166,o61003,-1,-1,o40166,o61012,-1,-1,
+	&	o40215,o23006,o40,0,
+	& 11,o42173,o75000,o100,0,o60211,o61000,o100,0,
+	&	o54002,o10,0,
+	& 7,o60134,o20000,-1,-1,o74002,4,0,
+	& 31,o167,o40170,o60003,-1,-1,o40231,o61010,-1,-1,
+	&	o40230,o60005,-1,-1,o40230,o60016,-1,-1,
+	&	o60144,o60003,-1,-1,o61002,-1,-1,
+	&	o60144,o60003,-1,-1,o61016,-1,-1,
+	& 4,o70145,o61002,o10,0,
+	& 4,o40172,o20000,-1,-1,
+	& 8,o42172,o21000,-1,-1,o40172,o21012,-1,-1,
+	& 5,o52212,o70212,o44002,-1,-1,
+	& 11,o42175,o61000,o10200,0,o60175,o61000,o10200,0,
+	&	o54002,4,o1000,
+	& 4,o40204,o61007,o20000,o40,
+	& 4,o70152,o61002,-1,-1/
+C
+	DATA (VWORD(I),I=173,212) /
+	& '*BLIND','JAB','*POUR','SPILL',
+	& 'PUMP','*PUT','*INSERT','*STUFF',
+	& 'PLACE','*RAISE','LIFT','*READ',
+	& '*PERUSE','SKIM','STRIKE','*SWING',
+	& 'THRUST','*TAKE','*HOLD','*CARRY',
+	& 'REMOVE','*TELL','*COMMAND','REQUEST',
+	& '*THROW','*HURL','CHUCK','*TIE',
+	& 'FASTEN','*TURN','SET','UNLOCK',
+	& '*WAKE','*ALARM','*STARTLE','SURPRISE',
+	& '*WAVE','*FLAUNT','BRANDISH','WIND'/
+C
+	DATA (VVOC(I),I=451,654) /
+	& 7,o60212,o21000,0,o200,o44002,0,o1000,
+	& 25,o42223,o41000,o400,0,
+	&	o60223,o41000,o400,0,o61005,-1,-1,
+	&	o60223,o41000,o400,0,o61016,-1,-1,
+	&	o60240,o41000,o400,0,o61012,-1,-1,
+	& 4,o40232,o60007,-1,-1,
+	& 16,o72220,o61005,-1,-1,o70220,o61016,-1,-1,
+	&	o40221,o61006,-1,-1,o70241,o61010,-1,-1,
+	& 5,o52155,o40155,o61007,-1,-1,
+	& 18,o42144,o71000,o40000,0,
+	&	o60144,o71000,o40000,0,o61002,-1,-1,
+	&	o60144,o71000,o40000,0,o61016,-1,-1,
+	& 12,o60215,o23000,o40,0,o44002,0,o1000,
+	&	o42215,o23000,o40,0,o50173,
+	& 7,o60214,o44000,0,o1000,o21003,0,o200,
+	& 11,o42204,o61000,o20000,o40,
+	&	o60204,o61000,o20000,0,o61015,-1,-1,
+	& 4,o40217,o20000,0,o2000,
+	& 21,o62224,o44000,-1,-1,o21003,o40,0,
+	&	o60224,o44000,-1,-1,o21016,o40,0,
+	&	o60220,o44000,-1,-1,o61005,-1,-1,
+	& 11,o70162,o61004,-1,-1,o60163,o21007,o40,0,
+	&	o65002,4,0,
+	& 22,o62164,o61000,2,0,o64002,4,0,
+	&	o40173,o75012,o100,0,o40174,o75013,o100,0,
+	&	o60237,o61000,2,0,o20004,-1,-1,
+	& 7,o60135,o21000,-1,-1,o74002,4,0,
+	& 8,o42150,o20000,o40,0,o40150,o20007,o40,0,
+	& 4,o40154,o40000,-1,-1,
+	& 5,o50233,o40233,o61007,-1,-1/
+C
+	DATA (VWORD(I),I=213,240)/
+	& 'ENTER','LEAVE','*MAKE','BUILD',
+	& '*OIL','*GREASE','LUBRICAT','PLAY',
+	& 'SEND','SLIDE','*SMELL','SNIFF',
+	& 'SQUEEZE','GET','COUNT',13*' '/
+C
+	DATA (VVOC(I),I=655,722) /
+	& 2,167,o50126,2,168,o50220,1,o50243,
+	& 4,o70244,o41002,-1,-1,
+	& 5,o50245,o70245,o75002,4,0,
+	& 4,o40246,o61014,-1,-1,
+	& 4,o70241,o61010,-1,-1,1,o50105,
+	& 1,o50104,19,o42204,o61000,o20000,o40,
+	&	o40202,o21005,0,2,o40203,o21015,0,2,
+	&	o60204,o61000,o20000,o40,o61015,-1,-1,
+	& 1,o50141,13*0/
+	END

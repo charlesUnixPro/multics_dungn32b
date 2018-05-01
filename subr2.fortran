@@ -1,0 +1,301 @@
+C JIGSUP- You are dead
+C
+C Declarations
+C
+	SUBROUTINE JIGSUP(DESC)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL MOVETO,QHERE,F
+	INTEGER RLIST(8)
+C
+C Functions and data
+C
+	DATA RLIST/KITCH,CLEAR,FORE3,FORE2,SHOUS,FORE2,KITCH,EHOUS/
+C
+	CALL RSPEAK(DESC)			! describe sad state.
+	PRSCON=0				! stop parser.
+	IF(DBGFLG.NE.0) RETURN			! if dbg, exit.
+	AVEHIC(WINNER)=0			! get rid of vehicle.
+	IF(WINNER.EQ.PLAYER) GO TO 10		! himself?
+	CALL RSPSUB(432,ODESC2(AOBJ(WINNER)))	! no, say who died.
+	CALL NEWSTA(AOBJ(WINNER),0,0,0,0)	! send object to hyper space.
+	AROOM(WINNER)=0				! send actor to hyper space.
+	RETURN
+C
+10	CALL SCRUPD(-10)			! charge 10 points.
+	IF(ENDGMF) GO TO 900			! no recovery in end game.
+	IF(DEATHS.GE.2) GO TO 1000		! dead twice? kick him off.
+	DEATHS=DEATHS+1				! record deaths.
+	DEADF=.TRUE.				! flag dead player.
+	I=8					! normal message.
+	IF(LLDF) I=1074				! ghosts exorcised?
+	CALL RSPEAK(I)				! tell him bad news.
+	AACTIO(PLAYER)=PLAYER			! turn on dead player func.
+C
+	DO 50 J=1,OLNT				! turn off fighting.
+C	  IF(QHERE(J,HERE)) OFLAG2(J)=OFLAG2(J).AND. .NOT.FITEBT
+	  IF(QHERE(J,HERE)) OFLAG2(J)=AND(OFLAG2(J), COMPL(FITEBT))
+50	CONTINUE
+C
+	F=MOVETO(LLD1,WINNER)			! reposition him.
+	EGYPTF=.TRUE.				! restore coffin.
+	IF(OADV(COFFI).EQ.WINNER) CALL NEWSTA(COFFI,0,EGYPT,0,0)
+C	OFLAG2(DOOR)=OFLAG2(DOOR).AND. .NOT.TCHBT ! restore door.
+	OFLAG2(DOOR)=AND(OFLAG2(DOOR), COMPL(TCHBT)) ! restore door.
+C	OFLAG1(ROBOT)=(OFLAG1(ROBOT).OR.VISIBT) .AND. .NOT.NDSCBT
+	OFLAG1(ROBOT)=AND(OR(OFLAG1(ROBOT),VISIBT), COMPL(NDSCBT))
+	CALL NEWSTA(LAMP,0,LROOM,0,0)		! lamp to living room,
+C	OFLAG1(LAMP)=OFLAG1(LAMP).OR.VISIBT	! visible
+	OFLAG1(LAMP)=OR(OFLAG1(LAMP),VISIBT)	! visible
+	DO 100 I=1,CLNT				! disable cevnts if needed.
+	  IF(CCNCEL(I)) CFLAG(I)=.FALSE.
+100	CONTINUE
+C %page
+C JIGSUP, PAGE 2
+C
+C Now redistribute his valuables and other belongings.
+C
+C The lamp has been placed in the living room.
+C The first 8 non-valuables are placed in locations around the house.
+C His valuables are placed starting at Troll Room.
+C Remaining non-valuables are after that.
+C
+	I=0
+	DO 200 J=1,OLNT				! loop thru objects.
+	  IF((OADV(J).NE.WINNER).OR.(OTVAL(J).NE.0))
+	&	GO TO 200			! get his non-val objs.
+	  I=I+1
+	  IF(I.GT.8) GO TO 400			! move to random locations.
+	  CALL NEWSTA(J,0,RLIST(I),0,0)
+200	CONTINUE
+C
+400	I=MTROL					! now move valuables.
+	NONOFL=RAIR+RWATER+REND			! dont move here.
+	DO 300 J=1,OLNT
+	  IF((OADV(J).NE.WINNER).OR.(OTVAL(J).EQ.0))
+	&	GO TO 300			! on adv and valuable?
+250	  I=I+1					! find next room.
+C	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 250	! skip if nono.
+	  IF((AND(RFLAG(I),NONOFL)).NE.0) GO TO 250	! skip if nono.
+	  CALL NEWSTA(J,0,I,0,0)		! yes, move.
+300	CONTINUE
+C
+	DO 500 J=1,OLNT				! now get rid of remainder.
+	  IF(OADV(J).NE.WINNER) GO TO 500
+450	  I=I+1					! find next room.
+C	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 450	! skip if nono.
+	  IF((AND(RFLAG(I),NONOFL)).NE.0) GO TO 450	! skip if nono.
+	  CALL NEWSTA(J,0,I,0,0)
+500	CONTINUE
+	RETURN
+C
+C Cant or wont continue, clean up and exit.
+C
+900	CALL RSPEAK(625)			! in endgame, lose.
+	GO TO 1100
+C
+1000	CALL RSPEAK(7)				! involuntary exit.
+1100	CALL SCORE(.FALSE.)			! tell score.
+	CALL EXIT
+C
+	END
+C %page
+C OACTOR-	Get actor associated with object
+C
+C Declarations
+C
+	INTEGER FUNCTION OACTOR(OBJ)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	DO 100 OACTOR=1,ALNT			! loop thru actors.
+	  IF(AOBJ(OACTOR).EQ.OBJ) RETURN	! found it?
+100	CONTINUE
+	CALL BUG(40,OBJ)			! no, die.
+	RETURN
+C
+	END
+C %page
+C PROB-		Compute probability
+C
+C Declarations
+C
+	LOGICAL FUNCTION PROB(G,B)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	I=G					! assume good luck.
+	IF(BADLKF) I=B				! if bad, too bad.
+	PROB=RND(100).LT.I			! compute.
+	RETURN
+C
+	END
+C %page
+C RMDESC-- Print room description
+C
+C RMDESC prints a description of the current room.
+C It is also the processor for verbs 'LOOK' and 'EXAMINE'
+C when there is no direct object.
+C
+	LOGICAL FUNCTION RMDESC(FULL)
+C
+C FULL=	0/1/2/3=	full/obj/room/full but no applicable
+C
+C Declarations
+C
+	IMPLICIT INTEGER (A-Z)
+	LOGICAL PROB,LIT
+	%include dparam
+C
+	RMDESC=.TRUE.				! assume wins.
+	RA=RACTIO(HERE)				! get room action.
+	IF(PRSO.LT.XMIN) GO TO 50		! if direction,
+	FROMDR=PRSO				! save and
+	PRSO=0					! clear.
+50	IF(FULL.EQ.1) GO TO 600			! objects only?
+	IF(HERE.EQ.AROOM(PLAYER)) GO TO 100	! player just move?
+	CALL RSPEAK(2)				! no, just say done.
+	PRSA=WALKIW				! set up walk in action.
+	RETURN
+C
+100	IF(LIT(HERE)) GO TO 300			! lit?
+	CALL RSPEAK(430)			! warn of grue.
+	RMDESC=.FALSE.
+	RETURN
+C
+300	I=RDESC2-HERE				! assume short desc.
+C	IF((FULL.EQ.0)
+C	&	.AND. (SUPERF.OR.(((RFLAG(HERE).AND.RSEEN).NE.0)
+C	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
+	IF((FULL.EQ.0)
+	&	.AND. (SUPERF.OR.(((AND(RFLAG(HERE),RSEEN)).NE.0)
+	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
+	I=RDESC1(HERE)				! use long.
+	IF((I.NE.0).OR.(RA.EQ.0)) GO TO 400	! if got desc, skip.
+	PRSA=LOOKW				! pretend look around.
+	PRSO=0					! no object referenced.
+	CALL RAPPLI(RA)				! let room handle.
+	PRSA=FOOW				! nop parser.
+	GO TO 500
+C
+400	CALL RSPEAK(I)				! output description.
+500	IF(AVEHIC(WINNER).NE.0) CALL RSPSUB(431,ODESC2(AVEHIC(WINNER)))
+C	RFLAG(HERE)=RFLAG(HERE).OR.RSEEN	! indicate room seen.
+	RFLAG(HERE)=OR(RFLAG(HERE),RSEEN)	! indicate room seen.
+C
+600	IF(LIT(HERE)) GO TO 700			! if lit, do objects
+	CALL RSPEAK(1036)			! can't see anything
+	RETURN
+C
+700	IF(FULL.NE.2) CALL PRINCR(FULL,HERE)	! print room contents
+	IF((FULL.NE.0).OR.(RA.EQ.0)) RETURN	! anything more?
+	PRSA=WALKIW				! give him a surpise.
+	CALL RAPPLI(RA)				! let room handle
+	PRSA=FOOW
+	RETURN
+C
+	END
+C %page
+C PRINCR- Print contents of room
+C
+C Declarations
+C
+	SUBROUTINE PRINCR(FULL,RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QEMPTY,QHERE
+C
+	J=329					! assume superbrief format.
+	DO 500 I=1,OLNT				! loop on objects
+C	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
+C	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)).OR.
+C	&	(I.EQ.AVEHIC(WINNER))) GO TO 500
+	  IF(.NOT.QHERE(I,RM).OR.((AND(OFLAG1(I),VISIBT)).EQ.0).OR.
+	&	(((AND(OFLAG1(I),NDSCBT)).NE.0).AND.(FULL.NE.1)).OR.
+	&	(I.EQ.AVEHIC(WINNER))) GO TO 500
+C	  IF((FULL.EQ.0).AND.(SUPERF.OR.(BRIEFF.AND.
+C	&	((RFLAG(HERE).AND.RSEEN).NE.0)))) GO TO 200
+	  IF((FULL.EQ.0).AND.(SUPERF.OR.(BRIEFF.AND.
+	&	((AND(RFLAG(HERE),RSEEN)).NE.0)))) GO TO 200
+C
+C Do long description of object.
+C
+	  K=ODESCO(I)				! get untouched.
+C	  IF((K.EQ.0).OR.((OFLAG2(I).AND.TCHBT).NE.0)) K=ODESC1(I)
+	  IF((K.EQ.0).OR.((AND(OFLAG2(I),TCHBT)).NE.0)) K=ODESC1(I)
+	  IF((K.EQ.0).AND.(FULL.EQ.1)) CALL RSPSUB(936,ODESC2(I))
+	  CALL RSPEAK(K)			! describe.
+	  GO TO 500
+C
+C Do short description of object.
+C
+200	  CALL RSPSUB(J,ODESC2(I))		! you can see it.
+	  J=502
+C
+500	CONTINUE
+C
+C Now loop to print contents of objects in room.
+C
+	DO 1000 I=1,OLNT			! loop on objects.
+C	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
+C	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)))
+C	&	GO TO 1000
+	  IF(.NOT.QHERE(I,RM).OR.((AND(OFLAG1(I),VISIBT)).EQ.0).OR.
+	&	(((AND(OFLAG1(I),NDSCBT)).NE.0).AND.(FULL.NE.1)))
+	&	GO TO 1000
+C	  IF((OFLAG2(I).AND.ACTRBT).NE.0) CALL INVENT(OACTOR(I))
+	  IF((AND(OFLAG2(I),ACTRBT)).NE.0) CALL INVENT(OACTOR(I))
+C	  IF((((OFLAG1(I).AND.TRANBT).EQ.0).AND.((OFLAG2(I).AND.OPENBT)
+C	&	.EQ.0)).OR.QEMPTY(I)) GO TO 1000
+	  IF((((AND(OFLAG1(I),TRANBT)).EQ.0).AND.((AND(OFLAG2(I),OPENBT))
+	&	.EQ.0)).OR.QEMPTY(I)) GO TO 1000
+C
+C Object is not empty and is open or transparent.
+C
+	  IF(I.NE.TCASE) GO TO 600		! trophy case?
+	  IF((.NOT.(BRIEFF.OR.SUPERF)).OR.(FULL.EQ.1))
+	&	CALL PRINCO(I,1053,.FALSE.)	! print contents.
+	  GO TO 1000
+600	  CALL PRINCO(I,573,.TRUE.)		! print contents
+1000	CONTINUE
+	RETURN
+C
+	END
+C %page
+C INVENT- Print contents of adventurer
+C
+C Declarations
+C
+	SUBROUTINE INVENT(ADV)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QEMPTY
+C
+	I=575					! first line.
+	IF(ADV.NE.PLAYER) I=576			! if not me.
+	DO 10 J=1,OLNT				! loop
+C	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0))
+C	&	GO TO 10
+	  IF((OADV(J).NE.ADV).OR.((AND(OFLAG1(J),VISIBT)).EQ.0))
+	&	GO TO 10
+	  CALL RSPSUB(I,ODESC2(AOBJ(ADV)))
+	  I=0
+	  CALL RSPSUB(502,ODESC2(J))
+10	CONTINUE
+C
+	IF(I.EQ.0) GO TO 25			! any objects?
+	IF(ADV.EQ.PLAYER) CALL RSPEAK(578)	! no, tell him.
+	RETURN
+C
+25	DO 100 J=1,OLNT				! loop.
+C	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0).OR.
+C	&	(((OFLAG1(J).AND.TRANBT).EQ.0).AND.
+C	&	((OFLAG2(J).AND.OPENBT).EQ.0))) GO TO 100
+	  IF((OADV(J).NE.ADV).OR.((AND(OFLAG1(J),VISIBT)).EQ.0).OR.
+	&	(((AND(OFLAG1(J),TRANBT)).EQ.0).AND.
+	&	((AND(OFLAG2(J),OPENBT)).EQ.0))) GO TO 100
+	  IF(.NOT.QEMPTY(J)) CALL PRINCO(J,573,.TRUE.) ! if not empty, list.
+100	CONTINUE
+	RETURN
+C
+	END

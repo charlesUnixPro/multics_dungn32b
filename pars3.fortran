@@ -1,0 +1,206 @@
+C TAKEIT-	Parser based take of object
+C
+C Declarations
+C
+	LOGICAL FUNCTION TAKEIT(OBJ,SFLAG)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	LOGICAL TAKE,LIT
+C
+	TAKEIT=.FALSE.				! assume loses.
+	IF((OBJ.EQ.0).OR.(OBJ.GT.STRBIT).OR.DEADF)
+	&	GO TO 4000			! null/stars/dead win.
+	ODO2=ODESC2(OBJ)			! get desc.
+	X=OCAN(OBJ)				! get container.
+C	IF((X.EQ.0).OR.((SFLAG.AND.VFBIT).EQ.0)) GO TO 500
+	IF((X.EQ.0).OR.(AND(SFLAG,VFBIT).EQ.0)) GO TO 500
+C	IF((OFLAG2(X).AND.OPENBT).NE.0) GO TO 500
+	IF(AND(OFLAG2(X),OPENBT).NE.0) GO TO 500
+	CALL RSPSUB(566,ODO2)			! cant reach.
+	RETURN
+C
+C 500	IF((SFLAG.AND.VRBIT).EQ.0) GO TO 1000	! shld be in room?
+500	IF(AND(SFLAG,VRBIT).EQ.0) GO TO 1000	! shld be in room?
+C	IF((SFLAG.AND.VTBIT).EQ.0) GO TO 2000	! can be taken?
+	IF(AND(SFLAG,VTBIT).EQ.0) GO TO 2000	! can be taken?
+C
+C Should be in room (VRBIT NE 0) and can be taken (VTBIT NE 0)
+C
+	IF(SCHLST(0,0,HERE,0,0,OBJ).LE.0) GO TO 4000 ! if not, ok.
+C
+C Its in the room and can be taken.
+C
+C	IF((OFLAG1(OBJ).AND.TAKEBT).NE.0) GO TO 3000
+	IF(AND(OFLAG1(OBJ),TAKEBT).NE.0) GO TO 3000
+C
+C Not takeable.  If we care, fail.
+C
+C	IF((SFLAG.AND.VCBIT).EQ.0) GO TO 4000	! if no care, return.
+	IF(AND(SFLAG,VCBIT).EQ.0) GO TO 4000	! if no care, return.
+	CALL RSPSUB(445,ODO2)
+	RETURN
+C
+C 1000--	It should not be in the room.
+C 2000--	It cant be taken.
+C
+2000	IF(AND(SFLAG,VCBIT).EQ.0) GO TO 4000	! if no care, return
+1000	IF(SCHLST(0,0,HERE,0,0,OBJ).LE.0) GO TO 4000
+	I=665					! assume player.
+	IF(WINNER.NE.PLAYER) I=1082
+	CALL RSPSUB(I,ODO2)			! doesn't have it.
+	RETURN
+C
+C 3000--	Take object.
+C
+3000	IF(LIT(HERE)) GO TO 3500		! lit?
+	CALL RSPEAK(579)			! can't do it.
+	RETURN
+C
+3500	SVA=PRSA				! save parse vector
+	SVO=PRSO
+	SVI=PRSI
+	PRSA=TAKEW				! make 'take obj'
+	PRSO=OBJ
+	PRSI=0					! no indirect object
+	TAKEIT=TAKE(.TRUE.)			! try to take object
+	PRSA=SVA				! restore parse vector.
+	PRSO=SVO
+	PRSI=SVI
+	RETURN
+C
+C 4000--	Win on general principles.
+C
+4000	TAKEIT=.TRUE.
+	RETURN
+C
+	END
+C %page
+C GWIM- Get what I mean in ambiguous situations
+C
+C Declarations
+C
+	INTEGER FUNCTION GWIM(SFLAG,SFW1,SFW2)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	LOGICAL TAKEIT,NOCARE,LIT
+C
+	GWIM=0					! no result.
+	IF(DEADF) RETURN			! dead? gwim disabled.
+	AV=AVEHIC(WINNER)
+C	NOCARE=(SFLAG.AND.VCBIT).EQ.0
+	NOCARE=AND(SFLAG,VCBIT).EQ.0
+C
+C First search adventurer
+C
+C	IF((SFLAG.AND.VABIT).NE.0)
+C	&	GWIM=FWIM(SFW1,SFW2,0,0,WINNER,NOCARE)
+	IF(AND(SFLAG,VABIT).NE.0)
+	&	GWIM=FWIM(SFW1,SFW2,0,0,WINNER,NOCARE)
+C	IF((GWIM.LT.0).OR..NOT.LIT(HERE).OR.
+C	&  ((SFLAG.AND.VRBIT).EQ.0)) RETURN
+	IF((GWIM.LT.0).OR..NOT.LIT(HERE).OR.
+	&  (AND(SFLAG,VRBIT).EQ.0)) RETURN
+C
+C Also search room
+C
+100	ROBJ=FWIM(SFW1,SFW2,HERE,0,0,NOCARE)
+	IF(ROBJ) 500,600,200			! test result.
+C
+C ROBJ > 0: if prev object, fail
+C
+C 200	IF((AV.EQ.0).OR.(ROBJ.EQ.AV).OR.
+C	&	((OFLAG2(ROBJ).AND.FINDBT).NE.0)) GO TO 300
+200	IF((AV.EQ.0).OR.(ROBJ.EQ.AV).OR.
+	&	(AND(OFLAG2(ROBJ),FINDBT).NE.0)) GO TO 300
+	IF(OCAN(ROBJ).NE.AV) RETURN		! unreachable? use prev obj.
+C
+300	IF(GWIM.EQ.0) GO TO 400			! prev obj?
+	GWIM=-GWIM				! yes, ambiguous.
+	RETURN
+C
+400	IF(.NOT.TAKEIT(ROBJ,SFLAG)) RETURN	! if untakeable, return prev.
+500	GWIM=ROBJ				! return room seach.
+600	RETURN
+C
+	END
+C %page
+C NOADJS-	See if any adjectives for object
+C
+C Declarations
+C
+	LOGICAL FUNCTION NOADJS(OBJ)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	NOADJS=.FALSE.				! assume false.
+	DO 100 I=1,AVMAX			! search adj.
+	  IF(IABS(AVOC(I)).EQ.OBJ) RETURN	! found adjective?
+	  IF(AVOC(I).EQ.0) GO TO 200		! end of list?
+100	CONTINUE
+200	NOADJS=.TRUE.				! true.
+	RETURN
+C
+	END
+C %page
+C LCIFY-	"Lower case"-ify a string for printing
+C
+C Declarations
+C
+	CHARACTER*(*) FUNCTION LCIFY(STRING,START)
+	IMPLICIT INTEGER(A-Z)
+	CHARACTER*(*) STRING
+C
+	LCIFY=STRING				! assume input = output.
+	K=LEN(STRING)				! get input length.
+	IF(START.GT.K) RETURN			! anything to convert?
+C
+	ULCVT=ICHAR('a')-ICHAR('A')		! conversion factor
+	DO 100 I=START,K			! loop on characters
+	  IF((STRING(I:I).GE.'A').AND.(STRING(I:I).LE.'Z'))
+	&	LCIFY(I:I)=CHAR(ICHAR(STRING(I:I))+ULCVT)
+100	CONTINUE
+	RETURN
+C
+	END
+C %page
+C FINDVB-	Find verb string corresponding to syntax.
+C
+C Declarations
+C
+	CHARACTER*(*) FUNCTION FINDVB(SYNTAX)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	J=1
+	DO 100 K=1,VWMAX			! loop through verbs
+	  NEWJ=J+VVOC(J)+1			! start of next syntax
+	  IF((J.LE.SYNTAX).AND.(SYNTAX.LT.NEWJ)) GO TO 200
+	  IF(VWORD(K)(1:1).NE.'*') J=NEWJ	! if last synonym, advance.
+100	CONTINUE
+	FINDVB=' '				! disaster
+	RETURN
+C
+200	FINDVB=VWORD(K)				! return string
+	IF(VWORD(K)(1:1).EQ.'*') FINDVB=VWORD(K)(2:WRDLNT)
+	RETURN
+C
+	END
+C %page
+C FINDPR-	Find preposition string corresponding to index.
+C
+C Declarations
+C
+	CHARACTER*(*) FUNCTION FINDPR(PREPNO)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	DO 100 I=1,PWMAX			! loop through prepositions.
+	  IF(PVOC(I).EQ.PREPNO) GO TO 200
+100	CONTINUE
+	FINDPR=' '
+	RETURN
+C
+200	FINDPR=PWORD(I)
+	RETURN
+C
+	END

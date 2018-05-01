@@ -1,0 +1,441 @@
+C GETOBJ--	Find obj described by adj, name pair
+C
+C Declarations
+C
+C This routine details on bit 3 of PRSFLG
+C
+	INTEGER FUNCTION GETOBJ(OIDX,AIDX,SPCOBJ)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	LOGICAL THISIT,GHERE,LIT,CHOMP,DFLAG,NOADJS
+C
+C	DFLAG=(PRSFLG.AND.8).NE.0
+	DFLAG=AND(PRSFLG,8).NE.0
+	CHOMP=.FALSE.
+	AV=AVEHIC(WINNER)
+	OBJ=0					! assume dark.
+	IF(.NOT.LIT(HERE)) GO TO 200		! lit?
+C
+	OBJ=SCHLST(OIDX,AIDX,HERE,0,0,SPCOBJ)	! search room.
+	IF(DFLAG) WRITE(OUTCH,10) OBJ
+10	FORMAT(' SCHLST- ROOM SCH ',I6)
+	IF(OBJ) 1000,200,100			! test result.
+C 100	IF((AV.EQ.0).OR.(AV.EQ.OBJ).OR.(OCAN(OBJ).EQ.AV).OR.
+C	&	((OFLAG2(OBJ).AND.FINDBT).NE.0)) GO TO 200
+100	IF((AV.EQ.0).OR.(AV.EQ.OBJ).OR.(OCAN(OBJ).EQ.AV).OR.
+	&	(AND(OFLAG2(OBJ),FINDBT).NE.0)) GO TO 200
+	CHOMP=.TRUE.				! not reachable.
+C
+200	IF(AV.EQ.0) GO TO 400			! in vehicle?
+	NOBJ=SCHLST(OIDX,AIDX,0,AV,0,SPCOBJ)	! search vehicle.
+	IF(DFLAG) WRITE(OUTCH,220) NOBJ
+220	FORMAT(' SCHLST- VEH SCH  ',I6)
+	IF(NOBJ) 800,400,300			! test result.
+300	CHOMP=.FALSE.				! reachable.
+	IF(OBJ.EQ.NOBJ) GO TO 400		! same as before?
+	IF(OBJ.NE.0) NOBJ=-NOBJ			! amb result?
+	OBJ=NOBJ
+C
+400	NOBJ=SCHLST(OIDX,AIDX,0,0,WINNER,SPCOBJ)	! search adventurer.
+	IF(DFLAG) WRITE(OUTCH,430) NOBJ
+430	FORMAT(' SCHLST- ADV SCH  ',I6)
+	IF(NOBJ) 800,900,500			! test result
+500	IF(OBJ.EQ.0) GO TO 800			! any previous? no, use nobj.
+	IF(AIDX.NE.0) GO TO 600			! yes, amb, any adj?
+	IF(NOADJS(OBJ).NEQV.NOADJS(NOBJ)) GO TO 700 ! both adj or no adj?
+600	OBJ=-NOBJ				! ambiguous result.
+	GO TO 900
+700	IF(NOADJS(OBJ)) GO TO 900		! if old no adj, use old.
+800	OBJ=NOBJ				! return new object.
+900	IF(CHOMP) OBJ=-10000			! unreachable.
+1000	GETOBJ=OBJ
+C
+	IF(GETOBJ.NE.0) GO TO 1500		! got something?
+	DO 1200 I=STRBIT+1,OLNT			! no, search globals.
+	  IF(.NOT.THISIT(OIDX,AIDX,I,SPCOBJ)) GO TO 1200
+	  IF(.NOT.GHERE(I,HERE)) GO TO 1200	! can it be here?
+	  IF(GETOBJ.EQ.0) GO TO 1150		! got one yet?
+	  IF(AIDX.NE.0) GO TO 1050		! yes, no adj?
+	  IF(NOADJS(GETOBJ).NEQV.NOADJS(I)) GO TO 1100	! only one with no adj?
+1050	  GETOBJ=-I				! ambiguous
+	  GO TO 1200
+1100	  IF(NOADJS(GETOBJ)) GO TO 1200		! if old no adj, retain.
+1150	  GETOBJ=I				! new is target.
+1200	CONTINUE
+C
+1500	CONTINUE				! end of search.
+	IF(DFLAG) WRITE(OUTCH,1540) GETOBJ
+1540	FORMAT(' SCHLST- RESULT   ',I6)
+	RETURN
+	END
+C %page
+C SCHLST--	Search for object
+C
+C Declarations
+C
+	INTEGER FUNCTION SCHLST(OIDX,AIDX,RM,CN,AD,SPCOBJ)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	LOGICAL THISIT,QHERE,NOTRAN,NOVIS,AEMPTY,NOADJS
+C
+C Functions and data
+C
+C	NOTRAN(O)=((OFLAG1(O).AND.TRANBT).EQ.0).AND.
+C	&	((OFLAG2(O).AND.OPENBT).EQ.0)
+	NOTRAN(O)=(AND(OFLAG1(O),TRANBT).EQ.0).AND.
+	&	(AND(OFLAG2(O),OPENBT).EQ.0)
+C	NOVIS(O)=((OFLAG1(O).AND.VISIBT).EQ.0)
+	NOVIS(O)=(AND(OFLAG1(O),VISIBT).EQ.0)
+C
+	SCHLST=0				! no result.
+	AEMPTY=.FALSE.				! no ambiguous empty.
+	DO 1000 I=1,OLNT			! search objects.
+	  IF(NOVIS(I).OR.
+	&	(((RM.EQ.0).OR.(.NOT.QHERE(I,RM))).AND.
+	&	 ((CN.EQ.0).OR.(OCAN(I).NE.CN)).AND.
+	&	 ((AD.EQ.0).OR.(OADV(I).NE.AD)))) GO TO 1000
+	  IF(.NOT.THISIT(OIDX,AIDX,I,SPCOBJ)) GO TO 200
+	  IF(SCHLST.EQ.0) GO TO 150		! got one already?
+	  IF(AIDX.NE.0) GO TO 2000		! adj? then ambiguous
+	  IF(NOADJS(I)) GO TO 100		! new have no adj?
+	  AEMPTY=.TRUE.				! no, old might, flag.
+	  GO TO 200
+100	  IF(NOADJS(SCHLST)) GO TO 2000		! old have no adj?
+150	  SCHLST=I				! new is unique, or
+						! new has no adj, old does.
+C
+C If open or transparent, search the object itself.
+C
+200	  IF(NOTRAN(I)) GO TO 1000
+C
+C Search is conducted in reverse.  All objects are checked to
+C See if they are at some level of containment inside object 'I'.
+C If they are at level 1, or if all links in the containment
+C chain are open, visible, and have SEARCHME set, they can qualify
+C as a potential match.
+C
+	  DO 500 J=1,OLNT			! search objects.
+	    IF(NOVIS(J).OR. (.NOT.THISIT(OIDX,AIDX,J,SPCOBJ)))
+	&	GO TO 500			! visible & match?
+	    X=OCAN(J)				! get container.
+300	    IF(X.EQ.I) GO TO 400		! inside target?
+	    IF(X.EQ.0) GO TO 500		! inside anything?
+C	    IF(NOVIS(X).OR.NOTRAN(X).OR.
+C	&	((OFLAG2(X).AND.SCHBT).EQ.0)) GO TO 500
+	    IF(NOVIS(X).OR.NOTRAN(X).OR.
+	&	(AND(OFLAG2(X),SCHBT).EQ.0)) GO TO 500
+	    X=OCAN(X)				! go another level.
+	    GO TO 300
+C
+400	    IF(SCHLST.EQ.0) GO TO 450		! already got one?
+	    IF(AIDX.NE.0) GO TO 2000		! adj? then ambiguous.
+	    IF(NOADJS(J)) GO TO 425		! new have no adj?
+	    AEMPTY=.TRUE.			! no, ambiguous empty.
+	    GO TO 500
+425	    IF(NOADJS(SCHLST)) GO TO 2000	! old have no adj? then amb.
+450	    SCHLST=J				! new is unique, or
+						! new has no adj, and old does.
+500	  CONTINUE
+C
+1000	CONTINUE
+	IF(.NOT.AEMPTY.OR.(SCHLST.EQ.0)) RETURN	! if none or not amb, done.
+	IF(NOADJS(SCHLST)) RETURN		! if amb, and no adj, done.
+2000	SCHLST=-SCHLST				! amb return.
+	RETURN
+C
+	END
+C %page
+C THISIT--	Validate object vs description
+C
+C Declarations
+C
+	LOGICAL FUNCTION THISIT(OIDX,AIDX,OBJ,SPCOBJ)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	THISIT=.FALSE.				! assume no match.
+	IF((SPCOBJ.NE.0).AND.(OBJ.EQ.SPCOBJ)) GO TO 500
+C
+C Check for object names
+C
+	IF(OIDX.EQ.0) RETURN			! no obj? lose.
+	I=OIDX
+100	IF(IABS(OVOC(I)).EQ.OBJ) GO TO 200	! found it?
+	I=I+1					! adv to next.
+	IF(OVOC(I).LT.0) GO TO 100		! still part of list?
+	RETURN					! if done, lose.
+C
+200	IF(AIDX.EQ.0) GO TO 500			! no adj? done.
+	I=AIDX
+300	IF(IABS(AVOC(I)).EQ.OBJ) GO TO 500	! found it?
+	I=I+1					! adv to next.
+	IF(AVOC(I).LT.0) GO TO 300		! still part of list?
+	RETURN					! if done, lose.
+C
+500	THISIT=.TRUE.
+	RETURN
+	END
+C %page
+C SYNMCH--	Syntax matcher
+C
+C Declarations
+C
+C This routine details on bit 4 of PRSFLG
+C
+	LOGICAL FUNCTION SYNMCH(X)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+	LOGICAL SYNEQL,TAKEIT,DFLAG
+	CHARACTER*(TEXLNT) STR
+	CHARACTER*(WRDLNT) FINDVB,FINDPR,LCIFY,LCWORD
+	CHARACTER*(WRDLNT+2) LCPRP1,LCPRP2
+	external dtext_$read (descriptors)
+C %page
+C SYNMCH, PAGE 2
+C
+	SYNMCH=.FALSE.
+C	DFLAG=(PRSFLG.AND.16).NE.0
+	DFLAG=AND(PRSFLG,16).NE.0
+	J=ACT					! set up ptr to syntax.
+	DRIVE=0					! no default.
+	DFORCE=0				! no forced default.
+C	QPREP=OFLAG.AND.OPREP			! valid orphan prep flag.
+	QPREP=AND(OFLAG,OPREP)			! valid orphan prep flag.
+	LIMIT=J+VVOC(J)+1			! compute limit.
+	J=J+1					! advance to next.
+C
+200	CALL UNPACK(J,NEWJ)			! unpack syntax.
+	IF(DFLAG) WRITE(OUTCH,210) J,OBJ1,PREP1,DOBJ,DFL1,DFL2
+210	FORMAT(' SYNMCH DOBJ INPUTS TO SYNEQL- ',6I7)
+C	SPREP=DOBJ.AND.VPMASK			! save expected prep.
+	SPREP=AND(DOBJ,VPMASK)			! save expected prep.
+	IF(SYNEQL(PREP1,OBJ1,DOBJ,DFL1,DFL2)) GO TO 1000
+C
+C Direct syntax match fails, try direct as indirect.
+C
+	IF((OBJ2.NE.0).OR.(OBJ1.EQ.0).OR.
+	&	(.NOT.SYNEQL(PREP1,OBJ1,IOBJ,IFL1,IFL2)))
+	&	GO TO 500			! try direct as indirect.
+	OBJ2=OBJ1				! move direct to indirect.
+	PREP2=PREP1
+	OBJ1=0					! no direct.
+	PREP1=0
+	DRIVE=J					! save as driver.
+	GO TO 3100				! go try to get direct obj
+C
+C Direct syntax match and direct-as-indirect fail.
+C
+500	IF(OBJ1.NE.0) GO TO 3000		! if direct obj, on to next.
+	GO TO 2500				! go do defaults.
+C
+C Direct syntax match succeeded, try indirect.
+C
+1000	IF(DFLAG) WRITE(OUTCH,1010) J,OBJ2,PREP2,IOBJ,IFL1,IFL2
+1010	FORMAT(' SYNMCH IOBJ INPUTS TO SYNEQL- ',6I7)
+C	SPREP=IOBJ.AND.VPMASK			! save expected prep.
+	SPREP=AND(IOBJ,VPMASK)			! save expected prep.
+	IF(SYNEQL(PREP2,OBJ2,IOBJ,IFL1,IFL2)) GO TO 6000
+C
+C Indirect syntax match fails.
+C
+	IF(OBJ2.NE.0) GO TO 3000		! if ind object, on to next.
+2500	IF((QPREP.EQ.0).OR.(QPREP.EQ.SPREP)) DFORCE=J	 ! if prep mch.
+C	IF((VFLAG.AND.SDRIV).NE.0) DRIVE=J	! if driver, record.
+	IF(AND(VFLAG,SDRIV).NE.0) DRIVE=J	! if driver, record.
+	IF(DFLAG) WRITE(OUTCH,2510) J,QPREP,SPREP,DFORCE,DRIVE
+2510	FORMAT(' SYNMCH DEFAULT SYNTAXES- ',5I7)
+3000	J=NEWJ
+	IF(J.LT.LIMIT) GO TO 200		! more to do?
+C %page
+C SYNMCH, PAGE 3
+C
+C Match has failed.  If default syntax exists, try to snarf
+C orphans or GWIMs, or make new orphans.
+C
+3100	IF(DFLAG) WRITE(OUTCH,3110) DRIVE,DFORCE,OBJ1,OBJ2
+3110	FORMAT(' SYNMCH, DRIVE=',2I6,'  OBJECTS =',2I6)
+	IF(DRIVE.EQ.0) DRIVE=DFORCE		! no driver? use force.
+	IF(DRIVE.EQ.0) GO TO 10000		! any driver?
+	CALL UNPACK(DRIVE,DFORCE)		! unpack dflt syntax.
+	LCWORD=LCIFY(FINDVB(DRIVE),2)		! get verb string.
+C	LCPRP1=' '//LCIFY(FINDPR(DOBJ.AND.VPMASK),1)//' '
+	LCPRP1=' '//LCIFY(FINDPR(INT(AND(DOBJ,VPMASK))),1)//' '
+C	LCPRP2=' '//LCIFY(FINDPR(IOBJ.AND.VPMASK),1)//' '
+	LCPRP2=' '//LCIFY(FINDPR(INT(AND(IOBJ,VPMASK))),1)//' '
+C
+C Try to fill direct object slot if that was the problem.
+C
+C	IF(((VFLAG.AND.SDIR).EQ.0).OR.(OBJ1.NE.0)) GO TO 4000
+	IF((AND(VFLAG,SDIR).EQ.0).OR.(OBJ1.NE.0)) GO TO 4000
+C	OBJ1=OFLAG.AND.OOBJ1
+	OBJ1=AND(OFLAG,OOBJ1)
+	IF(OBJ1.EQ.0) GO TO 3500		! any orphan?
+	IF(SYNEQL(OPREP1,OBJ1,DOBJ,DFL1,DFL2)) GO TO 4000
+C
+C Orphan fails, try GWIM.
+C
+3500	OBJ1=GWIM(DOBJ,DFW1,DFW2)		! get gwim.
+	IF(DFLAG) WRITE(OUTCH,3530) OBJ1
+3530	FORMAT(' SYNMCH- DO GWIM= ',I6)
+	IF(OBJ1.GT.0) GO TO 4000		! test result.
+C	CALL ORPHAN(-1,ACT,0,0,DOBJ.AND.VPMASK,' ',PREP2,OBJ2)	! fails, orphan.
+	CALL ORPHAN(-1,ACT,0,0,INT(AND(DOBJ,VPMASK)),' ',PREP2,OBJ2)	! fails, orphan.
+	BUNSUB=0				! no EXCEPT clause.
+	IF(OBJ2.GT.0) GO TO 3800		! if iobj, go print.
+3700	WRITE(OUTCH,3750)
+	&	LCWORD(1:NBLEN(LCWORD)),LCPRP1(1:NBLEN(LCPRP1)+1)
+3750	FORMAT(1X,A,A,'what?')
+	TELFLG=.TRUE.
+	RETURN
+C
+3800	X=IABS(ODESC2(OBJ2))			! get iobj description.
+C	READ(DBCH,REC=X) J,STR			! read data base.
+	call dtext_$read (x, j, str)			! read data base
+	CALL TXCRYP(X,STR)			! decrypt the line.
+	WRITE(OUTCH,3880) LCWORD(1:NBLEN(LCWORD)),
+	&	LCPRP1(1:NBLEN(LCPRP1)+1),
+	&	LCPRP2(1:NBLEN(LCPRP2)+1),STR(1:NBLEN(STR))
+3880	FORMAT(1X,A,A,'what',A,'the ',A,'?')
+	TELFLG=.TRUE.
+	RETURN
+C %page
+C SYNMCH, PAGE 4
+C
+C Try to fill indirect object slot if that was the problem.
+C
+C 4000	IF(((VFLAG.AND.SIND).EQ.0).OR.(OBJ2.NE.0)) GO TO 6000
+4000	IF((AND(VFLAG,SIND).EQ.0).OR.(OBJ2.NE.0)) GO TO 6000
+C	OBJ2=OFLAG.AND.OOBJ2
+	OBJ2=AND(OFLAG,OOBJ2)
+	IF(OBJ2.EQ.0) GO TO 4500		! any orphan?
+	IF(SYNEQL(OPREP2,OBJ2,IOBJ,IFL1,IFL2)) GO TO 6000
+C
+C Orphan fails, try GWIM.
+C
+4500	OBJ2=GWIM(IOBJ,IFW1,IFW2)		! gwim.
+	IF(DFLAG) WRITE(OUTCH,4550) OBJ2
+4550	FORMAT(' SYNMCH- IO GWIM= ',I6)
+	IF(OBJ2.GT.0) GO TO 6000
+	IF(OBJ1.GT.0) GO TO 4600		! if dobj, go print.
+C	CALL ORPHAN(-1,ACT,OFLAG.AND.OPREP1,
+C	&	OFLAG.AND.OOBJ1,IOBJ.AND.VPMASK,' ',0,0)
+	CALL ORPHAN(-1,ACT,INT(AND(OFLAG,OPREP1)),
+	&	INT(AND(OFLAG,OOBJ1)),INT(AND(IOBJ,VPMASK)),' ',0,0)
+	GO TO 3700
+C
+C Error with direct object available.
+C
+C 4600	CALL ORPHAN(-1,ACT,PREP1,OBJ1,IOBJ.AND.VPMASK,' ',0,0)
+4600	CALL ORPHAN(-1,ACT,PREP1,OBJ1,INT(AND(IOBJ,VPMASK)),' ',0,0)
+	X=IABS(ODESC2(OBJ1))			! get dobj description.
+C	READ(DBCH,REC=X) J,STR			! read data base.
+	call dtext_$read (x, j, str)			! read data base
+	CALL TXCRYP(X,STR)			! decrypt the line.
+	WRITE(OUTCH,4660) LCWORD(1:NBLEN(LCWORD)),
+	&	LCPRP1(1:NBLEN(LCPRP1)+1),
+	&	STR(1:NBLEN(STR)),LCPRP2(1:NBLEN(LCPRP2)+1)
+4660	FORMAT(1X,A,A,'the ',A,A,'what?')
+	TELFLG=.TRUE.
+	RETURN
+C
+C Total chomp.
+C
+10000	CALL RSPEAK(601)			! cant do anything.
+	BUNSUB=0
+	RETURN
+C %page
+C SYNMCH, PAGE 5
+C
+C Now try to take individual objects and
+C in general clean up the parse vector.
+C
+C 6000	IF((VFLAG.AND.SFLIP).EQ.0) GO TO 7000	! flip?
+6000	IF(AND(VFLAG,SFLIP).EQ.0) GO TO 7000	! flip?
+	J=OBJ1					! yes.
+	OBJ1=OBJ2
+	OBJ2=J
+C
+C 7000	PRSA=VFLAG.AND.SVMASK			! get verb.
+7000	PRSA=AND(VFLAG,SVMASK)			! get verb.
+	PRSO=OBJ1				! get dir obj.
+	PRSI=OBJ2				! get ind obj.
+	IF(.NOT.TAKEIT(PRSO,DOBJ)) RETURN	! try take.
+	IF(.NOT.TAKEIT(PRSI,IOBJ)) RETURN	! try take.
+	SYNMCH=.TRUE.
+	IF(DFLAG) WRITE(OUTCH,7050) SYNMCH,PRSA,PRSO,PRSI,ACT,OBJ1,OBJ2
+7050	FORMAT(' SYNMCH- RESULTS ',L1,6I7)
+	RETURN
+C
+	END
+C %page
+C UNPACK-	Unpack syntax specification, adv pointer
+C
+C Declarations
+C
+	SUBROUTINE UNPACK(OLDJ,J)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	DO 10 I=1,11				! clear syntax.
+	  SYN(I)=0
+10	CONTINUE
+C
+	VFLAG=VVOC(OLDJ)
+	J=OLDJ+1
+C	IF((VFLAG.AND.SDIR).EQ.0) RETURN	! dir object?
+	IF(AND(VFLAG,SDIR).EQ.0) RETURN	! dir object?
+	DFL1=-1					! assume std.
+	DFL2=-1
+C	IF((VFLAG.AND.SSTD).EQ.0) GO TO 100	! std object?
+	IF(AND(VFLAG,SSTD).EQ.0) GO TO 100	! std object?
+	DFW1=-1					! yes.
+	DFW2=-1
+	DOBJ=VABIT+VRBIT+VFBIT
+	GO TO 200
+C
+100	DOBJ=VVOC(J)				! not std.
+	DFW1=VVOC(J+1)
+	DFW2=VVOC(J+2)
+	J=J+3
+C	IF((DOBJ.AND.VEBIT).EQ.0) GO TO 200	! vbit = vfwim?
+	IF(AND(DOBJ,VEBIT).EQ.0) GO TO 200	! vbit = vfwim?
+	DFL1=DFW1				! yes.
+	DFL2=DFW2
+C
+C 200	IF((VFLAG.AND.SIND).EQ.0) RETURN	! ind object?
+200	IF(AND(VFLAG,SIND).EQ.0) RETURN	! ind object?
+	IFL1=-1					! assume std.
+	IFL2=-1
+	IOBJ=VVOC(J)
+	IFW1=VVOC(J+1)
+	IFW2=VVOC(J+2)
+	J=J+3
+C	IF((IOBJ.AND.VEBIT).EQ.0) RETURN	! vbit = vfwim?
+	IF(AND(IOBJ,VEBIT).EQ.0) RETURN	! vbit = vfwim?
+	IFL1=IFW1				! yes.
+	IFL2=IFW2
+	RETURN
+C
+	END
+C %page
+C SYNEQL-	Test for syntax equality
+C
+C Declarations
+C
+	LOGICAL FUNCTION SYNEQL(PREP,OBJ,SPREP,SFL1,SFL2)
+	IMPLICIT INTEGER(A-Z)
+	%include dparam
+C
+	IF(OBJ.EQ.0) GO TO 100			! any object?
+C	SYNEQL=(PREP.EQ.(SPREP.AND.VPMASK)).AND.
+C	&	(((SFL1.AND.OFLAG1(OBJ)).OR.
+C	&	  (SFL2.AND.OFLAG2(OBJ))).NE.0)
+	SYNEQL=(PREP.EQ.AND(SPREP,VPMASK)).AND.
+	&	(OR(AND(SFL1,OFLAG1(OBJ)),
+	&	  AND(SFL2,OFLAG2(OBJ))).NE.0)
+	RETURN
+C
+100	SYNEQL=(PREP.EQ.0).AND.(SFL1.EQ.0).AND.(SFL2.EQ.0)
+	RETURN
+C
+	END

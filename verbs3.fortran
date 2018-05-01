@@ -1,0 +1,216 @@
+C CXAPPL- Conditional exit processors
+C
+C Declarations
+C
+	INTEGER FUNCTION CXAPPL(RI)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	CXAPPL=0				! no return.
+	IF(RI.EQ.0) RETURN			! if no action, done.
+	GO TO (1000,2000,3000,4000,5000,6000,7000,8000,
+	&	9000,10000,11000,12000,13000,14000,15000),RI
+	CALL BUG(5,RI)
+C %page
+C CXAPPL, PAGE 2
+C
+C C1-	Coffin-cure
+C
+1000	EGYPTF=OADV(COFFI).NE.WINNER		! t if no coffin.
+	RETURN
+C
+C C2-	Carousel exit
+C C5-	Carousel out
+C
+2000	IF(CAROFF) RETURN			! if flipped, nothing.
+2500	CALL RSPEAK(121)			! can't tell directions.
+5000	I=XELNT(XCOND)*RND(8)			! choose random exit.
+C	XROOM1=(TRAVEL(REXIT(HERE)+I)).AND.XRMASK
+	XROOM1=AND((TRAVEL(REXIT(HERE)+I)),XRMASK)
+	CXAPPL=XROOM1				! return exit.
+	RETURN
+C
+C C3-	Chimney function
+C
+3000	LITLDF=.FALSE.				! assume heavy load.
+	IF(DEADF) GO TO 3300			! if dead, always ok.
+	J=0
+	DO 3100 I=1,OLNT			! count objects.
+	  IF(OADV(I).EQ.WINNER) J=J+1
+3100	CONTINUE
+C
+	IF(J.GT.2) RETURN			! carrying too much?
+	IF(J.NE.0) GO TO 3200			! carrying too little?
+	XSTRNG=890				! bad idea.
+	RETURN
+C
+3200	IF(OADV(LAMP).EQ.WINNER) GO TO 3300	! no lamp?
+	XSTRNG=446				! bad idea.
+	RETURN
+C
+3300	LITLDF=.TRUE.				! he can do it.
+C	IF((OFLAG2(DOOR).AND.OPENBT).EQ.0)
+C	&	OFLAG2(DOOR)=OFLAG2(DOOR).AND. .NOT.TCHBT
+	IF(AND(OFLAG2(DOOR),OPENBT).EQ.0)
+	&	OFLAG2(DOOR)=AND(OFLAG2(DOOR), COMPL(TCHBT))
+	RETURN
+C
+C C4-	Frobozz flag (Magnet Room, fake exit)
+C C6-	Frobozz flag (Magnet Room, real exit)
+C
+4000	IF(CAROFF) GO TO 2500			! if flipped, go spin.
+	FROBZF=.FALSE.				! otherwise, not an exit.
+	RETURN
+C
+6000	IF(CAROFF) GO TO 2500			! if flipped, go spin.
+	FROBZF=.TRUE.				! otherwise, an exit.
+	RETURN
+C %page
+C CXAPPL, PAGE 3
+C
+C C7-	Frobozz flag (bank alarm)
+C
+7000	FROBZF=.FALSE.				! assume fails.
+	J=BILLS					! check for bills.
+7100	IF(OADV(J).EQ.WINNER) RETURN		! winner's got it, fail.
+	J=OCAN(J)				! get container.
+	IF(J.NE.0) GO TO 7100			! if inside, loop
+	J=PORTR					! check for portrait.
+7200	IF(OADV(J).EQ.WINNER) RETURN		! winner's got it, fail.
+	J=OCAN(J)				! get container.
+	IF(J.NE.0) GO TO 7200			! if inside, loop
+	FROBZF=.TRUE.				! wins.
+	RETURN
+C
+C C8-	Frobozz flag (MRGO)
+C
+8000	FROBZF=.FALSE.				! assume cant move.
+	IF(MLOC.NE.XROOM1) GO TO 8100		! mirror in way?
+	IF((PRSO.EQ.XNORTH).OR.(PRSO.EQ.XSOUTH)) GO TO 8200
+	IF(MOD(MDIR,180).NE.0) GO TO 8300	! mirror must be n-s.
+	XROOM1=((XROOM1-MRA)*2)+MRAE		! calc east room.
+	IF(PRSO.GT.XSOUTH) XROOM1=XROOM1+1	! if sw/nw, calc west.
+8100	CXAPPL=XROOM1
+	RETURN
+C
+8200	XSTRNG=814				! assume struc blocks.
+	IF(MOD(MDIR,180).EQ.0) RETURN		! if mirror n-s, done.
+8300	LDIR=MDIR				! see which mirror.
+	IF(PRSO.EQ.XSOUTH) LDIR=180
+	XSTRNG=815				! mirror blocks.
+	IF(((LDIR.GT.180).AND..NOT.MR1F).OR.
+	&  ((LDIR.LT.180).AND..NOT.MR2F)) XSTRNG=816 ! mirror broken.
+	RETURN
+C
+C C9-	Frobozz flag (MIRIN)
+C
+9000	IF(MRHERE(HERE).NE.1) GO TO 9100	! mirror 1 here?
+	IF(MR1F) XSTRNG=805			! see if broken.
+	FROBZF=MROPNF				! enter if open.
+	RETURN
+C
+9100	FROBZF=.FALSE.				! not here,
+	XSTRNG=817				! lose.
+	RETURN
+C %page
+C CXAPPL, PAGE 4
+C
+C C10-	Frobozz flag (mirror exit)
+C
+10000	FROBZF=.FALSE.				! assume cant.
+	LDIR=((PRSO-XNORTH)/XNORTH)*45		! xlate dir to degrees.
+	IF(.NOT.MROPNF .OR.
+	&	((MOD(MDIR+270,360).NE.LDIR).AND.(PRSO.NE.XEXIT)))
+	&	GO TO 10200			! exit via mirror?
+	XROOM1=((MLOC-MRA)*2)+MRAE+1-(MDIR/180)	! assume e-w exit.
+	IF(MOD(MDIR,180).EQ.0) GO TO 10100	! if n-s, ok.
+	XROOM1=MLOC+1				! assume n exit.
+	IF(MDIR.GT.180) XROOM1=MLOC-1		! if south.
+10100	CXAPPL=XROOM1
+	RETURN
+C
+10200	IF(.NOT.WDOPNF .OR.
+	&	((MOD(MDIR+180,360).NE.LDIR).AND.(PRSO.NE.XEXIT)))
+	&	RETURN				! exit via open door?
+	XROOM1=MLOC+1				! assume n.
+	IF(MDIR.EQ.0) XROOM1=MLOC-1		! if s.
+	CALL RSPEAK(818)			! close door.
+	WDOPNF=.FALSE.
+	CXAPPL=XROOM1
+	RETURN
+C
+C C11-	Maybe door.  Normal message is that door is closed.
+C	But if LCELL.NE.4, door isn't there.
+C
+11000	IF(LCELL.NE.4) XSTRNG=678		! set up msg.
+	RETURN
+C
+C C12-	Frobozz flag (Puzzle Room main entrance)
+C
+12000	CPHERE=10				! set substate.
+	FROBZF=CPVEC(CPHERE).EQ.0		! enter if not blocked.
+	RETURN
+C
+C C13-	CPOUTF (Puzzle Room size entrance)
+C
+13000	CPHERE=52				! set substate.
+	RETURN
+C %page
+C CXAPPL, PAGE 5
+C
+C C14-	Frobozz flag (Puzzle Room transitions)
+C
+14000	FROBZF=.FALSE.				! asssume lose.
+	IF(PRSO.NE.XUP) GO TO 14100		! up?
+	IF(CPHERE.NE.10) RETURN			! at exit?
+	XSTRNG=881				! assume no ladder.
+	IF(CPVEC(CPHERE+1).NE.-2) RETURN	! ladder here?
+	CALL RSPEAK(882)			! you win.
+C	RFLAG(CPUZZ)=RFLAG(CPUZZ).AND..NOT.RSEEN	! reset seen.
+	RFLAG(CPUZZ)=AND(RFLAG(CPUZZ),COMPL(RSEEN))	! reset seen.
+	FROBZF=.TRUE.				! let him out.
+	RETURN
+C
+14100	IF((CPHERE.NE.52).OR.(PRSO.NE.XWEST).OR..NOT.CPOUTF)
+	&	GO TO 14200			! w exit at door?
+C	RFLAG(CPUZZ)=RFLAG(CPUZZ).AND..NOT.RSEEN	! reset seen.
+	RFLAG(CPUZZ)=AND(RFLAG(CPUZZ),COMPL(RSEEN))	! reset seen.
+	FROBZF=.TRUE.				! yes, let him out.
+	RETURN
+C
+14200	IF((CPHERE.NE.52).OR.(PRSO.NE.XWEST)) GO TO 14250
+	XSTRNG=932				! door in way.
+	RETURN
+C
+14250	DO 14300 I=1,16,2			! locate exit.
+	  IF(PRSO.EQ.CPDR(I)) GO TO 14400
+14300	CONTINUE
+	RETURN					! no such exit.
+C
+14400	J=CPDR(I+1)				! get directional offset.
+	NXT=CPHERE+J				! get next state.
+	K=8					! get orthogonal dir.
+	IF(J.LT.0) K=-8
+	IF((((IABS(J).EQ.1).OR.(IABS(J).EQ.8)).OR.
+	&   ((CPVEC(CPHERE+K).EQ.0).OR.(CPVEC(NXT-K).EQ.0))).AND.
+	&    (CPVEC(NXT).EQ.0)) GO TO 14500	! cant do it?
+	RETURN
+C
+14500	CALL CPGOTO(NXT)			! move to state.
+	XROOM1=CPUZZ				! stay in room.
+	CXAPPL=XROOM1
+	RETURN
+C
+C C15-	Frobozz flag (slide exit)
+C
+15000	FROBZF=.TRUE.				! works.
+	IF((TTIE.EQ.0).OR.DEADF) RETURN		! if no rope or dead, cellar.
+	IF(OROOM(TTIE).NE.HERE) RETURN		! if rope elsewhere, cellar.
+	CALL RSPEAK(1014)			! slippery.
+	CFLAG(CEVSLI)=.TRUE.			! turn on slide clock.
+	CTICK(CEVSLI)=MAX0(2,100/WEIGHR(0,WINNER))
+	XROOM1=SLID1				! on the ropes.
+	CXAPPL=XROOM1
+	RETURN
+C
+	END

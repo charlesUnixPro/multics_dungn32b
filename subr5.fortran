@@ -1,0 +1,144 @@
+C FIGHTS-- Compute fight strength
+C
+C Declarations
+C
+	INTEGER FUNCTION FIGHTS(H,FLG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	PARAMETER (STRMAX=7)
+	PARAMETER (STRMIN=2)
+	LOGICAL FLG
+C
+	FIGHTS=STRMIN+((((STRMAX-STRMIN)*ASCORE(H))+(MXSCOR/2))/MXSCOR)
+	IF(FLG) FIGHTS=FIGHTS+ASTREN(H)
+	RETURN
+C
+	END
+C %page
+C VILSTR-	Compute villain strength
+C
+C Declarations
+C
+	INTEGER FUNCTION VILSTR(V)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	VILSTR=OCAPAC(V)
+	IF(VILSTR.LE.0) RETURN
+	IF((V.NE.THIEF).OR..NOT.THFENF) GO TO 100
+	THFENF=.FALSE.				! thief unengrossed.
+	VILSTR=MIN0(VILSTR,2)			! no better than 2.
+C
+100	DO 200 I=1,VLNT				! see if best weapon.
+	  IF((VILLNS(I).EQ.V).AND.(PRSI.EQ.VBEST(I)))
+	&	VILSTR=MAX0(1,VILSTR-1)
+200	CONTINUE
+	RETURN
+C
+	END
+C %page
+C GTTIME-- Get total time played
+C
+C Declarations
+C
+	SUBROUTINE GTTIME(T)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	CALL ITIME(TMARRAY)
+	H=TMARRAY(1)
+	M=TMARRAY(2)
+	S=TMARRAY(3)
+C	print, "h ", h, " m ", m, " s ", s
+C	print, "shour ", shour, "smin ", smin
+	T=((H*60)+M)-((SHOUR*60)+SMIN)
+C	print, "t ", t
+	IF(T.LT.0) T=T+1440
+C	print, "t ", t
+	T=T+PLTIME
+C	print, "pltime ", pltime
+C	print, "t ", t
+	RETURN
+C
+	END
+C %page
+C OPNCLS-- Process open/close for doors
+C
+C Declarations
+C
+	LOGICAL FUNCTION OPNCLS(OBJ,SO,SC)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QOPEN
+C
+C Functions and data
+C
+C	QOPEN(O)=(OFLAG2(O).AND.OPENBT).NE.0
+	QOPEN(O)=AND(OFLAG2(O),OPENBT).NE.0
+C
+	OPNCLS=.TRUE.				! assume wins.
+	IF(PRSA.EQ.CLOSEW) GO TO 100		! close?
+	IF(PRSA.EQ.OPENW) GO TO 50		! open?
+	OPNCLS=.FALSE.				! lose
+	RETURN
+C
+50	IF(QOPEN(OBJ)) GO TO 200		! open... is it?
+	CALL RSPEAK(SO)
+C	OFLAG2(OBJ)=OFLAG2(OBJ).OR.OPENBT
+	OFLAG2(OBJ)=OR(OFLAG2(OBJ),OPENBT)
+	RETURN
+C
+100	IF(.NOT.QOPEN(OBJ)) GO TO 200		! close... is it?
+	CALL RSPEAK(SC)
+C	OFLAG2(OBJ)=OFLAG2(OBJ).AND..NOT.OPENBT
+	OFLAG2(OBJ)=AND(OFLAG2(OBJ),COMPL(OPENBT))
+	RETURN
+C
+200	CALL RSPEAK(125+RND(3))			! dummy.
+	RETURN
+C
+	END
+C %page
+C LIT-- Is room lit?
+C
+C Declarations
+C
+	LOGICAL FUNCTION LIT(RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QHERE
+C
+	LIT=.TRUE.				! assume wins
+C	IF(DEADF.OR.((RFLAG(RM).AND.RLIGHT).NE.0)) RETURN	! room lit?
+	IF(DEADF.OR.(AND(RFLAG(RM),RLIGHT).NE.0)) RETURN	! room lit?
+C
+	DO 1000 I=1,OLNT			! look for lit obj
+	  IF(QHERE(I,RM)) GO TO 100		! in room?
+	  OA=OADV(I)				! no
+	  IF(OA.LE.0) GO TO 1000		! on adv?
+	  IF(AROOM(OA).NE.RM) GO TO 1000	! adv in room?
+C
+C Obj in room or on adv in room
+C
+C 100	  IF((OFLAG1(I).AND.ONBT).NE.0) RETURN	! lit?
+100	  IF((AND(OFLAG1(I),ONBT)).NE.0) RETURN	! lit?
+C	  IF(((OFLAG1(I).AND.VISIBT).EQ.0).OR.
+C	&	(((OFLAG1(I).AND.TRANBT).EQ.0).AND.
+C	&	((OFLAG2(I).AND.OPENBT).EQ.0))) GO TO 1000
+	  IF(((AND(OFLAG1(I),VISIBT)).EQ.0).OR.
+	&	(((AND(OFLAG1(I),TRANBT)).EQ.0).AND.
+	&	((AND(OFLAG2(I),OPENBT)).EQ.0))) GO TO 1000
+C
+C Obj is visible and open or transparent
+C
+	  DO 500 J=1,OLNT
+C	    IF((OCAN(J).EQ.I).AND.((OFLAG1(J).AND.ONBT).NE.0))
+C	&	RETURN
+	    IF((OCAN(J).EQ.I).AND.((AND(OFLAG1(J),ONBT)).NE.0))
+	&	RETURN
+500	  CONTINUE
+1000	CONTINUE
+	LIT=.FALSE.
+	RETURN
+C
+	END

@@ -1,0 +1,363 @@
+C INFEST-	Subroutine to test for infested room
+C
+C Declarations
+C
+	LOGICAL FUNCTION INFEST(R)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF(.NOT.ENDGMF) INFEST=(OROOM(CYCLO).EQ.R).OR.
+	&	(OROOM(TROLL).EQ.R).OR.
+	&	((OROOM(THIEF).EQ.R).AND.THFACT)
+	IF(ENDGMF) INFEST=(R.EQ.MRG).OR.(R.EQ.MRGE).OR.
+	&	(R.EQ.MRGW).OR.
+	&	((R.EQ.INMIR).AND.(MLOC.EQ.MRG))
+	RETURN
+	END
+C %page
+C AAPPLI- Applicables for adventurers
+C
+C Declarations
+C
+	LOGICAL FUNCTION AAPPLI(RI)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL F,MOVETO,QHERE,FINDXT
+C
+	IF(RI.EQ.0) GO TO 10			! if zero, no app.
+	AAPPLI=.TRUE.				! assume wins.
+	GO TO (1000,2000,3000),RI		! branch on adv.
+	CALL BUG(11,RI)
+C
+C Common false return.
+C
+10	AAPPLI=.FALSE.
+	RETURN
+C %page
+C AAPPLI, PAGE 2
+C
+C A1--	Dead player.
+C
+1000	IF((PRSA.NE.ATTACW).AND.(PRSA.NE.MUNGW).AND.
+	&  (PRSA.NE.KILLW).AND.(PRSA.NE.SWINGW).AND.
+	&  (PRSA.NE.KICKW).AND.(PRSA.NE.BLASTW)) GO TO 1050
+	CALL RSPEAK(949)			! dead can't attack.
+	RETURN
+C
+1050	IF((PRSA.NE.OPENW).AND.(PRSA.NE.CLOSEW).AND.
+	&  (PRSA.NE.EATW).AND.(PRSA.NE.DRINKW).AND.
+	&  (PRSA.NE.INFLAW).AND.(PRSA.NE.DEFLAW).AND.
+	&  (PRSA.NE.TURNW).AND.(PRSA.NE.TIEW).AND.
+	&  (PRSA.NE.RUBW).AND.(PRSA.NE.COUNTW).AND.
+	&  (PRSA.NE.BURNW).AND.(PRSA.NE.UNTIEW)) GO TO 1100
+	CALL RSPEAK(950)			! dead can't do simple acts.
+	RETURN
+C
+1100	IF(PRSA.NE.TRNONW) GO TO 1150
+	CALL RSPEAK(951)			! dead don't need lights.
+	RETURN
+C
+1150	IF(PRSA.NE.SCOREW) GO TO 1200
+	CALL RSPEAK(952)			! dead can't score.
+	RETURN
+C
+1200	IF(PRSA.NE.TELLW) GO TO 1250
+	CALL RSPEAK(953)			! dead can't give orders.
+	RETURN
+C
+1250	IF(PRSA.NE.TAKEW) GO TO 1300
+	CALL RSPEAK(954)			! dead can't take.
+	RETURN
+C
+1300	IF((PRSA.NE.DROPW).AND.(PRSA.NE.THROWW).AND.
+	&  (PRSA.NE.INVENW)) GO TO 1350
+	CALL RSPEAK(955)			! dead have no possesions
+	RETURN
+C
+1350	IF(PRSA.NE.DIAGNW) GO TO 1400
+	CALL RSPEAK(956)			! dead as a doornail
+	RETURN
+C
+1400	IF(PRSA.NE.LOOKW) GO TO 1500
+	I=957					! assume nothing here
+	DO 1450 J=1,OLNT			! loop through objects
+	  IF(QHERE(J,HERE)) I=958		! found something
+1450	CONTINUE
+	CALL RSPEAK(I)				! describe objects
+C	IF((RFLAG(HERE).AND.RLIGHT).EQ.0) CALL RSPEAK(959)
+	IF((AND(RFLAG(HERE),RLIGHT)).EQ.0) CALL RSPEAK(959)
+	GO TO 10				! don't handle
+C
+1500	IF(PRSA.NE.PRAYW) GO TO 1600
+	IF(HERE.EQ.TEMP2) GO TO 1550		! praying in temple?
+	CALL RSPEAK(960)			! prayers are not answered
+	RETURN
+C
+C 1550	OFLAG1(LAMP)=OFLAG1(LAMP).OR.VISIBT	! back to life, restore lamp
+1550	OFLAG1(LAMP)=OR(OFLAG1(LAMP),VISIBT)	! back to life, restore lamp
+	AACTIO(PLAYER)=0			! disable dead player
+	DEADF=.FALSE.				! clear dead flag
+	F=MOVETO(FORE1,WINNER)			! move to forest
+	CALL RSPEAK(9)				! describe
+	RETURN
+C
+1600	IF(PRSA.NE.WALKW) GO TO 1700
+	IF(.NOT.FINDXT(PRSO,HERE)) GO TO 10	! if no exits, don't handle
+	IF(XROOM1.NE.BSHAF) GO TO 10		! if not bshaft, don't handle
+	CALL RSPEAK(962)			! can't go and score points
+	RETURN
+C
+1700	IF(PRSA.EQ.QUITW) GO TO 10		! if quit, don't handle
+	CALL RSPEAK(963)			! can't do it
+	RETURN
+C %page
+C
+C A2--	Robot.  Process most commands given to robot.
+C
+2000	IF((PRSA.NE.RAISEW).OR.(PRSO.NE.RCAGE)) GO TO 2200
+	CFLAG(CEVSPH)=.FALSE.			! robot raised cage.
+	WINNER=PLAYER				! reset for player.
+	F=MOVETO(CAGER,WINNER)			! move to new room.
+	CALL NEWSTA(CAGE,567,CAGER,0,0)		! install cage in room.
+	CALL NEWSTA(ROBOT,0,CAGER,0,0)		! install robot in room.
+	AROOM(AROBOT)=CAGER			! also move robot/adv.
+	CAGESF=.TRUE.				! cage solved.
+C	OFLAG1(ROBOT)=OFLAG1(ROBOT).AND..NOT.NDSCBT
+	OFLAG1(ROBOT)=AND(OFLAG1(ROBOT),COMPL(NDSCBT))
+C	OFLAG1(SPHER)=OFLAG1(SPHER).OR.TAKEBT	! reset flags.
+	OFLAG1(SPHER)=OR(OFLAG1(SPHER),TAKEBT)	! reset flags.
+	PRSCON=0				! stop cmd stream.
+	RETURN
+C
+2200	IF((PRSA.NE.DRINKW).AND.(PRSA.NE.EATW)) GO TO 2300
+	CALL RSPEAK(568)			! eat or drink, joke.
+	RETURN
+C
+2300	IF(PRSA.NE.READW) GO TO 2400		! read,
+	CALL RSPEAK(569)			! joke.
+	RETURN
+C
+2400	IF((PRSA.EQ.WALKW).OR.(PRSA.EQ.TAKEW).OR.(PRSA.EQ.DROPW)
+	& .OR.(PRSA.EQ.PUTW).OR.(PRSA.EQ.PUSHW).OR.(PRSA.EQ.LEAPW)
+	& .OR.(PRSA.EQ.TURNW)) GO TO 2500	! test for robot verb.
+	CALL RSPEAK(570)			! joke.
+	RETURN
+C
+2500	CALL RSPEAK(930)			! buzz, whirr, click!
+	GO TO 10				! don't handle here.
+C %page
+C AAPPLI, PAGE 3
+C
+C A3--	Master.  Process most commands given to master.
+C
+C 3000	IF((OFLAG2(QDOOR).AND.OPENBT).NE.0) GO TO 3100
+3000	IF((AND(OFLAG2(QDOOR),OPENBT)).NE.0) GO TO 3100
+	CALL RSPEAK(783)			! no master yet.
+	RETURN
+C
+3100	IF(PRSA.NE.WALKW) GO TO 3200		! walk?
+	I=784					! assume wont.
+	IF(((HERE.EQ.SCORR).AND.
+	&	((PRSO.EQ.XNORTH).OR.(PRSO.EQ.XENTER))).OR.
+	&  ((HERE.EQ.NCORR).AND.
+	&	((PRSO.EQ.XSOUTH).OR.(PRSO.EQ.XENTER))))
+	&	I=785				! if prison, cant.
+	CALL RSPEAK(I)
+	RETURN
+C
+3200	IF((PRSA.EQ.STAYW).OR.(PRSA.EQ.FOLLOW).OR.(PRSA.EQ.KILLW).OR.
+	&  (PRSA.EQ.MUNGW).OR.(PRSA.EQ.ATTACW)) GO TO 10
+	IF((PRSA.EQ.TAKEW).OR.(PRSA.EQ.DROPW).OR.(PRSA.EQ.PUTW).OR.
+	&  (PRSA.EQ.THROWW).OR.(PRSA.EQ.PUSHW).OR.(PRSA.EQ.TURNW).OR.
+	&  (PRSA.EQ.SPINW).OR.(PRSA.EQ.TRNTOW).OR.(PRSA.EQ.OPENW).OR.
+	&  (PRSA.EQ.CLOSEW)) GO TO 3300		! master can, politely.
+	CALL RSPEAK(786)			! master can't.
+	RETURN
+C
+3300	CALL RSPEAK(1057)			! polite reply.
+	GO TO 10
+C
+	END
+C %page
+C THIEFD-	Intermove thief demon
+C
+C Declarations
+C
+C This routine details on bit 6 of PRSFLG
+C
+	SUBROUTINE THIEFD
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL DFLAG,ONCE,PROB,QHERE,QSTILL,LIT,WINNIN,WASLIT
+C
+C Functions AND DATA
+C
+	QSTILL(R)=(QHERE(STILL,R).OR.(OADV(STILL).EQ.-THIEF))
+C %page
+C THIEFD, PAGE 2
+C
+C	DFLAG=(PRSFLG.AND.64).NE.0		! set up detail flag.
+	DFLAG=AND(PRSFLG,64).NE.0		! set up detail flag.
+	ONCE=.FALSE.				! init flag.
+1025	WASLIT=LIT(HERE)			! record if lit.
+	RHERE=OROOM(THIEF)			! visible pos.
+	IF(RHERE.NE.0) THFPOS=RHERE
+C
+	IF((THFPOS.EQ.HERE).AND..NOT.DEADF) GO TO 1100	! thief in live win rm?
+	IF(THFPOS.NE.TREAS) GO TO 1400		! thief not in treas?
+C
+C Thief is in treasure room, and winner is not.
+C
+	IF(DFLAG) PRINT 10
+10	FORMAT(' THIEFD-- IN TREASURE ROOM')
+	IF(RHERE.EQ.0) GO TO 1050		! visible?
+	CALL NEWSTA(THIEF,0,0,0,0)		! yes, vanish.
+	RHERE=0
+	IF(QSTILL(TREAS)) CALL NEWSTA(STILL,0,0,THIEF,0)
+	DO 1040 I=1,OLNT			! loop through objects.
+C	  IF(QHERE(I,THFPOS))
+C	&	OFLAG1(I)=OFLAG1(I).OR.VISIBT	! make objects visible
+	  IF(QHERE(I,THFPOS))
+	&	OFLAG1(I)=OR(OFLAG1(I),VISIBT)	! make objects visible
+1040	CONTINUE
+1050	I=ROBADV(-THIEF,THFPOS,0,0)		! drop valuables.
+C	IF(QHERE(EGG,THFPOS)) OFLAG2(EGG)=OFLAG2(EGG).OR.OPENBT
+	IF(QHERE(EGG,THFPOS)) OFLAG2(EGG)=OR(OFLAG2(EGG),OPENBT)
+	GO TO 1700
+C %page
+C THIEFD, PAGE 3
+C
+C Thief and (live) winner in same room.
+C
+1100	IF(THFPOS.EQ.TREAS) GO TO 1700		! if treas room, nothing.
+C	IF((RFLAG(THFPOS).AND.RLIGHT).NE.0) GO TO 1400 ! not if light.
+	IF((AND(RFLAG(THFPOS),RLIGHT)).NE.0) GO TO 1400 ! not if light.
+	IF(DFLAG) PRINT 20
+20	FORMAT(' THIEFD-- IN ADV ROOM')
+	IF(THFFLG) GO TO 1300			! thief announced?
+	IF((RHERE.NE.0).OR.PROB(70,70))	GO TO 1150	! if invis and 30%.
+	IF(OCAN(STILL).NE.THIEF) GO TO 1700	! abort if no stilletto.
+	CALL NEWSTA(THIEF,583,THFPOS,0,0)	! insert thief into room.
+	THFFLG=.TRUE.				! thief is announced.
+	RETURN
+C
+C 1150	IF((RHERE.EQ.0).OR.((OFLAG2(THIEF).AND.FITEBT).EQ.0))
+C	&	GO TO 1200			! if visible and fight.
+1150	IF((RHERE.EQ.0).OR.((AND(OFLAG2(THIEF),FITEBT)).EQ.0))
+	&	GO TO 1200			! if visible and fight.
+	IF(WINNIN(THIEF,PLAYER)) GO TO 1175	! winning?
+	CALL NEWSTA(THIEF,584,0,0,0)		! no, vanish thief.
+C	OFLAG2(THIEF)=OFLAG2(THIEF).AND. .NOT.FITEBT
+	OFLAG2(THIEF)=AND(OFLAG2(THIEF), COMPL(FITEBT))
+	IF(QSTILL(THFPOS)) CALL NEWSTA(STILL,0,0,THIEF,0)
+	RETURN
+C
+1175	IF(PROB(90,90)) GO TO 1700		! 90% chance to stay.
+C
+1200	IF((RHERE.EQ.0).OR.PROB(70,70)) GO TO 1250 ! if visible and 30%
+	CALL NEWSTA(THIEF,585,0,0,0)		! vanish thief.
+	IF(QSTILL(THFPOS)) CALL NEWSTA(STILL,0,0,THIEF,0)
+	RETURN
+C
+1300	IF(RHERE.EQ.0) GO TO 1700		! announced.  visible?
+1250	IF(PROB(70,70)) RETURN			! 70% chance to do nothing.
+	THFFLG=.TRUE.
+	NR=ROBRM(THFPOS,100,0,0,-THIEF)+ROBADV(PLAYER,0,0,-THIEF)
+	I=586					! robbed em.
+	IF(RHERE.NE.0) I=588			! was he visible?
+	CALL NEWSTA(THIEF,I+MIN0(1,NR),0,0,0)	! vanish thief, give result.
+	IF(QSTILL(THFPOS))
+	&	CALL NEWSTA(STILL,0,0,THIEF,0)	! reclaim stilletto.
+	IF(WASLIT.AND..NOT.LIT(HERE).AND.(HERE.EQ.AROOM(PLAYER)))
+	&	CALL RSPEAK(915)		! leave player in dark?
+	RHERE=0
+	GO TO 1700				! onward.
+C %page
+C THIEFD, PAGE 4
+C
+C Not in adventurers room, or adventurer dead, or room lit.
+C
+1400	CALL NEWSTA(THIEF,0,0,0,0)		! vanish.
+	RHERE=0
+	IF(DFLAG) PRINT 30,THFPOS
+30	FORMAT(' THIEFD-- IN ROOM ',I4)
+	IF(QSTILL(THFPOS)) CALL NEWSTA(STILL,0,0,THIEF,0)
+C	IF((RFLAG(THFPOS).AND.RSEEN).EQ.0) GO TO 1700	! cant rob unseen.
+	IF((AND(RFLAG(THFPOS),RSEEN)).EQ.0) GO TO 1700	! cant rob unseen.
+	RMK=1045				! first object to vanish.
+	I=ROBRM(THFPOS,75,0,0,-5555)		! rob room 75% to hyperspace.
+	DO 1410 I=1,OLNT			! loop through objects.
+	  IF(OADV(I).NE.-5555) GO TO 1410	! in hyperspace?
+	  CALL NEWSTA(I,0,0,0,-THIEF)		! move to thief.
+	  IF((THFPOS.EQ.HERE).AND..NOT.DEADF)	! thief's remarks.
+	&	CALL RSPSUB(RMK,ODESC2(I))
+	  RMK=1083				! for next object.
+1410	CONTINUE
+C
+	IF((THFPOS.LT.MAZE1).OR.(THFPOS.GT.MAZ15).OR.
+	&	(HERE.LT.MAZE1).OR.(HERE.GT.MAZ15)) GO TO 1500
+	DO 1450 I=1,OLNT			! both in maze.
+C	  IF(.NOT.QHERE(I,THFPOS).OR.PROB(60,60).OR.(I.EQ.WATER).OR.
+C	&	((OFLAG1(I).AND.(VISIBT+TAKEBT)).NE.(VISIBT+TAKEBT)))
+C	&	GO TO 1450
+	  IF(.NOT.QHERE(I,THFPOS).OR.PROB(60,60).OR.(I.EQ.WATER).OR.
+	&	((AND(OFLAG1(I),(VISIBT+TAKEBT))).NE.(VISIBT+TAKEBT)))
+	&	GO TO 1450
+	  IF(.NOT.DEADF) CALL RSPSUB(590,ODESC2(I))	! thief's remarks.
+	  IF(PROB(40,20)) GO TO 1700
+	  CALL NEWSTA(I,0,0,0,-THIEF)		! steal it.
+C	  OFLAG2(I)=OFLAG2(I).OR.TCHBT
+	  OFLAG2(I)=OR(OFLAG2(I),TCHBT)
+	  GO TO 1700
+1450	CONTINUE
+	GO TO 1700
+C
+1500	DO 1550 I=1,OLNT			! not in maze.
+C	  IF(.NOT.QHERE(I,THFPOS).OR.(OTVAL(I).NE.0).OR.
+C	&	PROB(80,60).OR.(I.EQ.WATER).OR.
+C	&	((OFLAG1(I).AND.(VISIBT+TAKEBT)).NE.(VISIBT+TAKEBT)))
+C	&	GO TO 1550
+	  IF(.NOT.QHERE(I,THFPOS).OR.(OTVAL(I).NE.0).OR.
+	&	PROB(80,60).OR.(I.EQ.WATER).OR.
+	&	((AND(OFLAG1(I),(VISIBT+TAKEBT))).NE.(VISIBT+TAKEBT)))
+	&	GO TO 1550
+	  CALL NEWSTA(I,0,0,0,-THIEF)
+C	  OFLAG2(I)=OFLAG2(I).OR.TCHBT
+	  OFLAG2(I)=OR(OFLAG2(I),TCHBT)
+	  IF((THFPOS.EQ.HERE).AND..NOT.DEADF)
+	&	CALL RSPSUB(RMK,ODESC2(I))	! vanishes before you.
+	  GO TO 1700
+1550	CONTINUE
+C %page
+C THIEFD, PAGE 5
+C
+C Now move to new room.
+C
+1700	IF(OADV(ROPE).NE.-THIEF) GO TO 1725	! did he steal rope?
+	DOMEF=.FALSE.
+	TTIE=0
+1725	IF(ONCE) GO TO 1800
+	ONCE=.NOT.ONCE
+1750	THFPOS=THFPOS-1				! next room.
+	IF(THFPOS.LE.0) THFPOS=RLNT
+C	IF((RFLAG(THFPOS).AND.(RLAND+RSACRD+REND)).NE.RLAND)
+C	&	GO TO 1750			! must be land, profane.
+	IF((AND(RFLAG(THFPOS),(RLAND+RSACRD+REND))).NE.RLAND)
+	&	GO TO 1750			! must be land, profane.
+	THFFLG=.FALSE.				! not announced.
+	GO TO 1025				! once more.
+C
+C All done.
+C
+1800	IF(THFPOS.EQ.TREAS) RETURN		! in treasure room?
+	J=1055					! no, drop junky stuff.
+	IF(THFPOS.NE.HERE) J=0
+	DO 1850 I=1,OLNT
+	  IF((OADV(I).NE.-THIEF).OR.PROB(70,30).OR.
+	&	(OTVAL(I).GT.0)) GO TO 1850
+	  CALL NEWSTA(I,J,THFPOS,0,0)
+	  J=0
+1850	CONTINUE
+	RETURN
+C
+	END

@@ -1,0 +1,218 @@
+C Subroutines for DUNGEON
+C
+C COPYRIGHT 1980, 1990, INFOCOM COMPUTERS AND COMMUNICATIONS, CAMBRIDGE MA.
+C ALL RIGHTS RESERVED, COMMERCIAL USAGE STRICTLY PROHIBITED
+C WRITTEN BY R. M. SUPNIK
+C
+C 27-Sep-94	RMS	Fixed bugs in WEIGHR, JIGSUP, SCORE.
+C			Added GRANITE WALL to GHERE.
+C 30-Jan-94	RMS	Fixed bugs from MS DOS port.
+C 30-Jun-92	RMS	Changed file names to lower case.
+C 29-Jun-92	RMS	Removed extraneous declaration in RMDESC.
+C
+C RSPEAK-- Output random message routine
+C
+C Called by--
+C
+C	CALL RSPEAK(MSGNUM)
+C
+	SUBROUTINE RSPEAK(N)
+	IMPLICIT INTEGER (A-Z)
+C
+	CALL RSPSB2(N,0,0)
+	RETURN
+C
+	END
+C
+C RSPSUB-- Output random message with substitutable argument
+C
+C Called by--
+C
+C	CALL RSPSUB(MSGNUM,SUBNUM)
+C
+	SUBROUTINE RSPSUB(N,S1)
+	IMPLICIT INTEGER (A-Z)
+C
+	CALL RSPSB2(N,S1,0)
+	RETURN
+C
+	END
+C %page
+C RSPSB2-- Output random message with substitutable arguments
+C
+C Called by--
+C
+C	CALL RSPSB2(MSGNUM,S1,S2)
+C
+	SUBROUTINE RSPSB2(A,B,C)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	CHARACTER*(TEXLNT) B1,B2
+C debug
+c	character*(texlnt) btmp
+	external dtext_$read (descriptors)
+C
+C Convert all arguments from dictionary numbers (if positive)
+c to absolute record numbers.
+C
+	X=A					! set up work variables.
+	Y=B
+	Z=C
+	IF(X.GT.0) X=RTEXT(X)			! if >0, look up in rtext.
+	IF(Y.GT.0) Y=RTEXT(Y)
+	IF(Z.GT.0) Z=RTEXT(Z)
+	X=IABS(X)				! take abs value.
+	Y=IABS(Y)
+	Z=IABS(Z)
+	IF(X.EQ.0) RETURN			! anything to do?
+	TELFLG=.TRUE.				! said something.
+C
+C	READ(DBCH,REC=X) OLDREC,B1		! read first line.
+	call dtext_$read (x, oldrec, b1)	! read first line.
+100	CALL TXCRYP(X,B1)			! decrypt line.
+C
+200	IF(Y.EQ.0) GO TO 400			! any substitutable?
+	I=INDEX(B1,'#')				! look for #.
+	IF(I.GT.0) GO TO 1000			! found?
+C
+400	WRITE(OUTCH,650) B1(1:MAX0(1,NBLEN(B1)))! output line.
+650	FORMAT(1X,A)
+	X=X+1					! on to next record.
+C	READ(DBCH,REC=X) NEWREC,B1		! read next record.
+	call dtext_$read (x, newrec, b1)	! read next record.
+	IF(OLDREC.EQ.NEWREC) GO TO 100		! continuation?
+	RETURN					! no, exit.
+C page
+C RSPSB2, PAGE 2
+C
+C Substitution with substitutable available.
+C I is index of # in B1.
+C Y is number of record to substitute.
+C
+C Procedure:
+C   1) Copy rest of B1 to B2
+C   2) Read substitutable over B1
+C   3) Restore tail of original B1
+C
+C The implicit assumption here is that the substitutable string
+c is very short.
+C
+1000	B2(1:(TEXLNT-I))=B1(I+1:TEXLNT)		! copy rest of B1.
+C
+C	READ(DBCH,REC=Y) J,B1(I:TEXLNT)		! read sub record.
+
+c	print, "about to call read; y = ", y, " i = ", i
+c	print, "b1 = ", b1
+
+	call dtext_$read (y, j, B1(I:TEXLNT))		! read sub record.
+c	call dtext_$read (y, j, btmp)		! read sub record.
+c          b1(i:texlnt) = btmp(1:texlnt-i+1)
+
+c	print, "b1 = ", b1
+c	print, "read returns j = ", j
+	CALL TXCRYP(Y,B1(I:TEXLNT))		! decrypt sub record.
+c	print, "b1 = ", b1
+	J=NBLEN(B1)				! backscan for blanks.
+c	print, "j = ", j
+	B1(J+1:TEXLNT)=B2(1:TEXLNT-J)
+C
+	Y=Z					! set up for next
+	Z=0					! substitution and
+	GO TO 200				! recheck line.
+C
+	END
+C %page
+C OBJACT-- Apply objects from parse vector
+C
+C Declarations
+C
+	LOGICAL FUNCTION OBJACT(X)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL OAPPLI
+C
+	OBJACT=.TRUE.				! assume wins.
+	IF(PRSI.EQ.0) GO TO 100			! ind object?
+	IF(OAPPLI(OACTIO(PRSI),0)) RETURN	! yes, let it handle.
+C
+100	IF(PRSO.EQ.0) GO TO 200			! dir object?
+	IF(OAPPLI(OACTIO(PRSO),0)) RETURN	! yes, let it handle.
+C
+200	OBJACT=.FALSE.				! loses.
+	RETURN
+C
+	END
+C %page
+C BUG-- Report fatal system error
+C
+C Declarations
+C
+	SUBROUTINE BUG(A,B)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	WRITE(OUTCH,100) A,B			! gonzo
+	IF(DBGFLG.NE.0) RETURN
+	SUBBUF='CRASH.DAT'			! set up crash save name.
+	SUBLNT=NBLEN(SUBBUF)
+	CALL SAVEGM				! do final save.
+	WRITE(OUTCH,200)
+	CALL EXIT
+C
+100	FORMAT(' Program error ',I2,', parameter =',I6)
+200	FORMAT(' Game state saved in "CRASH.DAT".')
+C
+	END
+C %page
+C NEWSTA-- Set new status for object
+C
+C Called by--
+C
+C	CALL NEWSTA(OBJECT,STRING,NEWROOM,NEWCON,NEWADV)
+C
+	SUBROUTINE NEWSTA(O,R,RM,CN,AD)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	CALL RSPEAK(R)
+	OROOM(O)=RM
+	OCAN(O)=CN
+	OADV(O)=AD
+	RETURN
+C
+	END
+C %page
+C QHERE-- Test for object in room
+C
+C Declarations
+C
+	LOGICAL FUNCTION QHERE(OBJ,RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	QHERE=.TRUE.
+	IF(OROOM(OBJ).EQ.RM) RETURN		! in room?
+	DO 100 I=1,R2LNT			! no, sch room2.
+	  IF((O2(I).EQ.OBJ).AND.(R2(I).EQ.RM)) RETURN
+100	CONTINUE
+	QHERE=.FALSE.				! not present.
+	RETURN
+C
+	END
+C %page
+C QEMPTY-- Test for object empty
+C
+C Declarations
+C
+	LOGICAL FUNCTION QEMPTY(OBJ)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	QEMPTY=.FALSE.				! assume lose.
+	DO 100 I=1,OLNT
+	  IF(OCAN(I).EQ.OBJ) RETURN		! inside target?
+100	CONTINUE
+	QEMPTY=.TRUE.
+	RETURN
+C
+	END

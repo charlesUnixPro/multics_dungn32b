@@ -1,0 +1,215 @@
+C PRINCO-	Print contents of object
+C
+C Declarations
+C
+	SUBROUTINE PRINCO(OBJ,DESC,LDESCF)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QEMPTY,LDESCF,MOREF,QSEEIN,QUAL
+C
+C Functions and data
+C
+C	QSEEIN(X)=((OFLAG1(X).AND.TRANBT).NE.0).OR.
+C	&	  ((OFLAG2(X).AND.OPENBT).NE.0)
+	QSEEIN(X)=((AND(OFLAG1(X),TRANBT)).NE.0).OR.
+	&	  ((AND(OFLAG2(X),OPENBT)).NE.0)
+C	QUAL(X,Y)=((OFLAG1(X).AND.VISIBT).NE.0).AND.
+C	&	   (OCAN(X).EQ.Y).AND.(X.NE.AOBJ(WINNER))
+	QUAL(X,Y)=((AND(OFLAG1(X),VISIBT)).NE.0).AND.
+	&	   (OCAN(X).EQ.Y).AND.(X.NE.AOBJ(WINNER))
+C
+	MOREF=.FALSE.				! no additional printouts.
+	ALSO=0					! no untouched descriptions.
+	IF(SUPERF.OR..NOT.LDESCF) GO TO 2000	! skip long descriptions?
+	DO 1000 I=1,OLNT			! loop thru objects.
+	  IF(.NOT.QUAL(I,OBJ)) GO TO 1000	! inside target?
+C	  IF((ODESCO(I).EQ.0).OR.
+C	&   ((OFLAG2(I).AND.TCHBT).NE.0)) GO TO 700
+	  IF((ODESCO(I).EQ.0).OR.
+	&   ((AND(OFLAG2(I),TCHBT)).NE.0)) GO TO 700
+	  CALL RSPEAK(ODESCO(I))		! print untouched descr.
+	  ALSO=1				! flag.
+	  IF(.NOT.QSEEIN(I).OR.QEMPTY(I)) GO TO 1000
+	  CALL RSPSUB(573,ODESC2(I))		! object, which contains:
+	  DO 500 J=1,OLNT			! loop thru objects.
+	    IF(QUAL(J,I)) CALL RSPSUB(502,ODESC2(J))
+500	  CONTINUE
+	  GO TO 1000
+700	  MOREF=.TRUE.
+1000	CONTINUE
+	IF(.NOT.MOREF) RETURN			! more to do?
+C
+2000	CALL RSPSUB(DESC+ALSO,ODESC2(OBJ))	! print header.
+	DO 3000 I=1,OLNT			! loop thru objects.
+	  IF(.NOT.QUAL(I,OBJ)) GO TO 3000	! inside target?
+C	  IF((ALSO.NE.0).AND.(ODESCO(I).NE.0).AND.
+C	&    ((OFLAG2(I).AND.TCHBT).EQ.0)) GO TO 3000
+	  IF((ALSO.NE.0).AND.(ODESCO(I).NE.0).AND.
+	&    ((AND(OFLAG2(I),TCHBT)).EQ.0)) GO TO 3000
+	  IF(.NOT.QSEEIN(I).OR.QEMPTY(I)) GO TO 2700
+	  CALL RSPSUB(1050,ODESC2(I))		! object, which contains:
+	  DO 2500 J=1,OLNT			! loop thru objects.
+	    IF(QUAL(J,I)) CALL RSPSUB(1051,ODESC2(J))
+2500	  CONTINUE
+	  GO TO 3000
+2700	  CALL RSPSUB(502,ODESC2(I))		! object, nothing inside.
+3000	CONTINUE
+	RETURN
+C
+	END
+C %page
+C MOVETO- Move player to new room
+C
+C Declarations
+C
+	LOGICAL FUNCTION MOVETO(NR,WHO)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL NLV,LHR,LNR
+C
+	MOVETO=.FALSE.				! assume fails.
+C	LHR=(RFLAG(HERE).AND.RLAND).NE.0	! land  here flag.
+	LHR=(AND(RFLAG(HERE),RLAND)).NE.0	! land  here flag.
+C	LNR=(RFLAG(NR).AND.RLAND).NE.0		! land there flag.
+	LNR=(AND(RFLAG(NR),RLAND)).NE.0		! land there flag.
+	J=AVEHIC(WHO)				! his vehicle
+C
+	IF(J.NE.0) GO TO 100			! in vehicle?
+	IF(LNR) GO TO 500			! no, going to land?
+	CALL RSPEAK(427)			! can't go without vehicle.
+	RETURN
+C
+100	BITS=0					! assume nowhere.
+	IF(J.EQ.RBOAT) BITS=RWATER		! in boat?
+	IF(J.EQ.BALLO) BITS=RAIR		! in balloon?
+	IF(J.EQ.BUCKE) BITS=RBUCK		! in bucket?
+C	NLV=(RFLAG(NR).AND.BITS).EQ.0		! got wrong vehicle flag.
+	NLV=(AND(RFLAG(NR),BITS)).EQ.0		! got wrong vehicle flag.
+	IF((.NOT.LNR .AND.NLV) .OR.
+	&	(LNR.AND.LHR.AND.NLV.AND.(BITS.NE.RLAND)))
+	&	GO TO 800			! got wrong vehicle?
+C
+500	MOVETO=.TRUE.				! move should succeed.
+C	IF((RFLAG(NR).AND.RMUNG).EQ.0) GO TO 600 ! room munged?
+	IF((AND(RFLAG(NR),RMUNG)).EQ.0) GO TO 600 ! room munged?
+	CALL RSPEAK(RDESC1(NR))			! yes, tell how.
+	RETURN
+C
+600	IF(WHO.NE.PLAYER) CALL NEWSTA(AOBJ(WHO),0,NR,0,0)
+	IF(J.NE.0) CALL NEWSTA(J,0,NR,0,0)
+	HERE=NR
+	AROOM(WHO)=HERE
+	CALL SCRUPD(RVAL(NR))			! score room
+	RVAL(NR)=0
+	RETURN
+C
+800	CALL RSPSUB(428,ODESC2(J))		! wrong vehicle.
+	RETURN
+C
+	END
+C %page
+C SCORE-- Print out current score
+C
+C Declarations
+C
+	SUBROUTINE SCORE(FLG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL FLG
+	INTEGER RANK(10),ERANK(5)
+C
+C Functions and data
+C
+	DATA RANK/20,19,18,16,12,8,4,2,1,0/
+	DATA ERANK/20,15,10,5,0/
+C
+	AS=ASCORE(WINNER)
+	IF(ENDGMF) GO TO 60			! endgame?
+	IF(FLG) WRITE(OUTCH,100)
+	IF(.NOT.FLG) WRITE(OUTCH,110)
+	IF(MOVES.NE.1) WRITE(OUTCH,120) AS,MXSCOR,MOVES
+	IF(MOVES.EQ.1) WRITE(OUTCH,130) AS,MXSCOR,MOVES
+	IF(AS.LT.0) GO TO 50			! negative score?
+	DO 10 I=1,10				! find rank.
+	  IF((AS*20/MXSCOR).GE.RANK(I)) GO TO 20
+10	CONTINUE
+	I=10					! beginner.
+20	CALL RSPEAK(484+I)			! print rank.
+	RETURN
+C
+50	CALL RSPEAK(886)			! negative score.
+	RETURN
+C
+60	IF(FLG) WRITE(OUTCH,140)
+	IF(.NOT.FLG) WRITE(OUTCH,150)
+	WRITE(OUTCH,120) EGSCOR,EGMXSC,MOVES
+	DO 70 I=1,5
+	  IF((EGSCOR*20/EGMXSC).GE.ERANK(I)) GO TO 80
+70	CONTINUE
+	I=5					! beginner.
+80	CALL RSPEAK(786+I)
+	RETURN
+C
+100	FORMAT(' Your score would be',$)
+110	FORMAT(' Your score is',$)
+120	FORMAT('+',I4,' [total of',I4,' points], in',I5,' moves.')
+130	FORMAT('+',I4,' [total of',I4,' points], in',I5,' move.')
+140	FORMAT(' Your score in the endgame would be',$)
+150	FORMAT(' Your score in the endgame is',$)
+C
+	END
+C %page
+C SCRUPD- Update winner's score
+C
+C Declarations
+C
+	SUBROUTINE SCRUPD(N)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF(ENDGMF) GO TO 100			! endgame?
+	ASCORE(WINNER)=ASCORE(WINNER)+N		! update score
+	RWSCOR=RWSCOR+N				! update raw score
+	IF(ASCORE(WINNER).LT.(MXSCOR-(10*MIN0(1,DEATHS)))) RETURN
+	CFLAG(CEVEGH)=.TRUE.			! turn on end game
+	CTICK(CEVEGH)=15
+	RETURN
+C
+100	EGSCOR=EGSCOR+N				! update eg score.
+	RETURN
+C
+	END
+C %page
+C FINDXT- Find exit from room
+C
+C Declarations
+C
+	LOGICAL FUNCTION FINDXT(DIR,RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	FINDXT=.TRUE.				! assume wins.
+	XI=REXIT(RM)				! find first entry.
+	IF(XI.EQ.0) GO TO 1000			! no exits?
+C
+100	I=TRAVEL(XI)				! get entry.
+C	XROOM1=I.AND.XRMASK			! isolate room.
+	XROOM1=AND(I,XRMASK)			! isolate room.
+C	XTYPE=(((I.AND..NOT.XLFLAG)/XFSHFT).AND.XFMASK)+1
+	XTYPE=AND(((AND(I,COMPL(XLFLAG)))/XFSHFT),XFMASK)+1
+	GO TO (110,120,130,130),XTYPE		! branch on entry.
+	CALL BUG(10,XTYPE)
+C
+C 130	XOBJ=TRAVEL(XI+2).AND.XRMASK		! door/cexit- get obj/flag.
+130	XOBJ=AND(TRAVEL(XI+2),XRMASK)		! door/cexit- get obj/flag.
+	XACTIO=TRAVEL(XI+2)/XASHFT
+120	XSTRNG=TRAVEL(XI+1)			! door/cexit/nexit - string.
+110	XI=XI+XELNT(XTYPE)			! advance to next entry.
+C	IF((I.AND.XDMASK).EQ.DIR) RETURN	! match?
+	IF(AND(I,XDMASK).EQ.DIR) RETURN	! match?
+C	IF((I.AND.XLFLAG).EQ.0) GO TO 100	! last entry?
+	IF(AND(I,XLFLAG).EQ.0) GO TO 100	! last entry?
+1000	FINDXT=.FALSE.				! yes, lose.
+	RETURN
+C
+	END

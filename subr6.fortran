@@ -1,0 +1,263 @@
+C WEIGHR- Returns sum of weight of qualifying objects
+C
+C Declarations
+C
+	INTEGER FUNCTION WEIGHR(CN,AD)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QHERE
+C
+	WEIGHR=0
+	DO 100 I=1,OLNT				! omit big fixed items.
+	  IF(OSIZE(I).GE.10000) GO TO 100	! if fixed, forget it.
+	  IF((OADV(I).EQ.AD).AND.(AD.NE.0)) GO TO 50	! on adv?
+	  J=I					! see if contained.
+25	  J=OCAN(J)				! get next level up.
+	  IF(J.EQ.0) GO TO 100			! end of list?
+	  IF(((OADV(J).NE.AD).OR.(AD.EQ.0)) .AND.
+	&	(J.NE.CN)) GO TO 25		! cont on adv, or argument?
+50	  WEIGHR=WEIGHR+OSIZE(I)		! add in weight.
+100	CONTINUE
+	RETURN
+C
+	END
+C %page
+C GHERE--	Is global actually in this room?
+C
+C Declarations
+C
+	LOGICAL FUNCTION GHERE(OBJ,RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	GHERE=.TRUE.				! assume wins.
+	IF(OBJ.LE.GLOBAL) RETURN		! if untested, return.
+	GO TO (  100,1000,2000,3000,4000,5000,5000,5000,6000,
+	&	7000,8000,9000,9100,8000,10000,11000,12000,
+	&	13000,14000,15000),OBJ-GLOBAL
+	CALL BUG(60,OBJ)
+C
+C 100-- Granite Wall
+C
+100	GHERE=(RM.EQ.TEMP1).OR.(RM.EQ.TREAS).OR.(RM.EQ.SLIDE)
+	RETURN
+C
+C 1000--	House
+C
+1000	GHERE=((RM.GE.WHOUS).AND.(RM.LE.EHOUS)).OR.
+	&	((RM.GE.FORE1).AND.(RM.LE.CLEAR)).OR.(RM.EQ.MTREE)
+	RETURN
+C
+C 2000--	Bird
+C
+2000	GHERE=((RM.GE.FORE1).AND.(RM.LT.CLEAR)).OR.(RM.EQ.MTREE)
+	RETURN
+C
+C 3000--	Tree
+C
+3000	GHERE=((RM.GE.FORE1).AND.(RM.LT.CLEAR)).AND.(RM.NE.FORE3)
+	RETURN
+C
+C 4000--	North wall
+C
+4000	GHERE=((RM.GE.BKVW).AND.(RM.LE.BKBOX)).OR.(RM.EQ.CPUZZ)
+	RETURN
+C
+C 5000--	East, south, west walls
+C
+5000	GHERE=((RM.GE.BKVW).AND.(RM.LT.BKBOX)).OR.(RM.EQ.CPUZZ)
+	RETURN
+C
+C 6000--	Global water
+C
+C 6000	GHERE=(RFLAG(RM).AND.(RWATER+RFILL)).NE.0
+6000	GHERE=AND(RFLAG(RM),(RWATER+RFILL)).NE.0
+	RETURN
+C
+C 7000--	Global guardians
+C
+7000	GHERE=((RM.GE.MRC).AND.(RM.LE.MRD)).OR.
+	&	((RM.GE.MRCE).AND.(RM.LE.MRDW)).OR.(RM.EQ.INMIR)
+	RETURN
+C
+C 8000--	Rose/channel
+C
+8000	GHERE=((RM.GE.MRA).AND.(RM.LE.MRD)).OR.(RM.EQ.INMIR)
+	RETURN
+C
+C 9000--	Mirror
+C 9100		Panel
+C
+9100	IF(RM.EQ.FDOOR) RETURN			! panel at fdoor.
+9000	GHERE=((RM.GE.MRA).AND.(RM.LE.MRC)).OR.
+	&	((RM.GE.MRAE).AND.(RM.LE.MRCW))
+	RETURN
+C
+C 10000--	Master
+C
+10000	GHERE=(RM.EQ.FDOOR).OR.(RM.EQ.NCORR).OR.(RM.EQ.PARAP).OR.
+	&	(RM.EQ.CELL).OR.(RM.EQ.PCELL).OR.(RM.EQ.NCELL)
+	RETURN
+C
+C 11000--	Ladder
+C
+11000	GHERE=(RM.EQ.CPUZZ)
+	RETURN
+C
+C 12000--	Well
+C
+12000	GHERE=(RM.EQ.TWELL).OR.(RM.EQ.BWELL)
+	RETURN
+C
+C 13000--	Rope in slide
+C
+13000	GHERE=(RM.GE.SLID1).AND.(RM.LE.SLEDG)
+	RETURN
+C
+C 14000--	Slide
+C
+14000	GHERE=(RM.GE.SLIDE).OR.((RM.GE.SLID1).AND.(RM.LE.SLEDG))
+	RETURN
+C
+C 15000--	Bunch pseudo object
+C
+15000	GHERE=.FALSE.			! never present
+	RETURN
+C
+	END
+C %page
+C MRHERE--	Is mirror here?
+C
+C Declarations
+C
+	INTEGER FUNCTION MRHERE(RM)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF((RM.LT.MRAE).OR.(RM.GT.MRDW)) GO TO 100
+C
+C Room is an e-w room, mirror must be n-s (mdir= 0 or 180)
+C
+	MRHERE=1				! assume mirror 1 here.
+	IF(MOD(RM-MRAE,2).EQ.(MDIR/180)) MRHERE=2
+	RETURN
+C
+C Room is north or south of mirror.  If mirror is n-s or not
+c within one room of room, lose.
+C
+100	MRHERE=0
+	IF((IABS(MLOC-RM).NE.1).OR.(MOD(MDIR,180).EQ.0)) RETURN
+C
+C Room is within one of mloc, and mdir is e-w
+C
+	MRHERE=1
+	IF(((RM.LT.MLOC).AND.(MDIR.LT.180)).OR.
+	&  ((RM.GT.MLOC).AND.(MDIR.GT.180))) MRHERE=2
+	RETURN
+C
+	END
+C %page
+C ENCRYP--	Encrypt password
+C
+C Declarations
+C
+	SUBROUTINE ENCRYP(INW,OUTW)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	CHARACTER*(WRDLNT) INW,OUTW,KEYW
+	INTEGER UINW(8),UKEYW(8)
+	DATA KEYW/'ECOVXRMS'/
+C
+	ICHARA=ICHAR('A')-1			! character base.
+	UINWS=0					! unbiased inw sum.
+	UKEYWS=0				! unbiased keyw sum.
+	J=1					! pointer in keyword.
+	DO 100 I=1,WRDLNT			! unbias, compute sums.
+	  UKEYW(I)=ICHAR(KEYW(I:I))-ICHARA	! strip ascii.
+	  IF(ICHAR(INW(J:J)).LE.ICHARA) J=1	! recycle on bad.
+	  UINW(I)=ICHAR(INW(J:J))-ICHARA
+	  UKEYWS=UKEYWS+UKEYW(I)
+	  UINWS=UINWS+UINW(I)
+	  J=J+1
+100	CONTINUE
+C
+	USUM=MOD(UINWS,8)+(8*MOD(UKEYWS,8))	! compute mask.
+	DO 200 I=1,8
+C	  J=(UINW(I).XOR.UKEYW(I).XOR.USUM).AND.31
+	  J=AND(XOR(UINW(I),UKEYW(I),USUM),31)
+	  USUM=MOD(USUM+1,32)
+	  IF(J.GT.26) J=MOD(J,26)
+	  OUTW(I:I)=CHAR(MAX0(1,J)+ICHARA)
+200	CONTINUE
+	RETURN
+C
+	END
+C %page
+C CPGOTO--	Move to next state in puzzle room
+C
+C Declarations
+C
+	SUBROUTINE CPGOTO(ST)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+C	RFLAG(CPUZZ)=RFLAG(CPUZZ).AND..NOT.RSEEN
+	RFLAG(CPUZZ)=AND(RFLAG(CPUZZ),COMPL(RSEEN))
+	DO 100 I=1,OLNT				! relocate objects.
+C	  IF((OROOM(I).EQ.CPUZZ).AND.
+C	&	((OFLAG2(I).AND.(ACTRBT+VILLBT)).EQ.0))
+C	&	CALL NEWSTA(I,0,CPHERE*HFACTR,0,0)
+	  IF((OROOM(I).EQ.CPUZZ).AND.
+	&	((AND(OFLAG2(I),(ACTRBT+VILLBT))).EQ.0))
+	&	CALL NEWSTA(I,0,CPHERE*HFACTR,0,0)
+	  IF(OROOM(I).EQ.(ST*HFACTR))
+	&	CALL NEWSTA(I,0,CPUZZ,0,0)
+100	CONTINUE
+	CPHERE=ST
+	RETURN
+C
+	END
+C %page
+C CPINFO--	Describe puzzle room
+C
+C Declarations
+C
+	SUBROUTINE CPINFO(RMK,ST)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	INTEGER DGMOFT(8)
+	CHARACTER*2 DGM(8),PICT(5),QMK
+C
+C Functions and local data
+C
+	DATA DGMOFT/-9,-8,-7,-1,1,7,8,9/
+	DATA PICT/'SS','SS','SS','  ','MM'/
+	DATA QMK/'??'/
+C
+	CALL RSPEAK(RMK)
+	DO 100 I=1,8
+	  J=DGMOFT(I)
+	  DGM(I)=PICT(CPVEC(ST+J)+4)		! get picture element.
+	  IF((IABS(J).EQ.1).OR.(IABS(J).EQ.8)) GO TO 100
+	  K=8
+	  IF(J.LT.0) K=-8			! get ortho dir.
+	  L=J-K
+	  IF((CPVEC(ST+K).NE.0).AND.(CPVEC(ST+L).NE.0))
+	&	DGM(I)=QMK
+100	CONTINUE
+	WRITE(OUTCH,10) DGM
+C
+	IF(ST.EQ.10) CALL RSPEAK(870)		! at hole?
+	IF(ST.EQ.37) CALL RSPEAK(871)		! at niche?
+	I=872					! door open?
+	IF(CPOUTF) I=873
+	IF(ST.EQ.52) CALL RSPEAK(I)		! at door?
+	IF(CPVEC(ST+1).EQ.-2) CALL RSPEAK(874)	! east ladder?
+	IF(CPVEC(ST-1).EQ.-3) CALL RSPEAK(875)	! west ladder?
+	RETURN
+C
+10	FORMAT('       |',A,1X,A,1X,A,'|'/,
+	&' West  |',A,' .. ',A,'|  East'/,
+	&'       |',A,1X,A,1X,A,'|')
+C
+	END

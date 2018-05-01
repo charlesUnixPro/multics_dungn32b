@@ -1,0 +1,180 @@
+C FWIM- Find what I mean
+C
+C Declarations
+C
+	INTEGER FUNCTION FWIM(F1,F2,RM,CON,ADV,NOCARE)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL NOCARE,QHERE
+C
+	FWIM=0					! assume nothing.
+	DO 1000 I=1,OLNT			! loop
+	  IF(((RM.EQ.0).OR.(.NOT.QHERE(I,RM))) .AND.
+	&	((ADV.EQ.0).OR.(OADV(I).NE.ADV)) .AND.
+	&	((CON.EQ.0).OR.(OCAN(I).NE.CON)))
+	&	GO TO 1000
+C
+C Object is on list... is it a match?
+C
+C	  IF((OFLAG1(I).AND.VISIBT).EQ.0) GO TO 1000
+	  IF((AND(OFLAG1(I),VISIBT)).EQ.0) GO TO 1000
+C	  IF((.NOT.NOCARE .AND.((OFLAG1(I).AND.TAKEBT).EQ.0)) .OR.
+C	&	(((OFLAG1(I).AND.F1).EQ.0).AND.
+C	&	 ((OFLAG2(I).AND.F2).EQ.0))) GO TO 500
+	  IF((.NOT.NOCARE .AND.((AND(OFLAG1(I),TAKEBT)).EQ.0)) .OR.
+	&	(((AND(OFLAG1(I),F1)).EQ.0).AND.
+	&	 ((AND(OFLAG2(I),F2)).EQ.0))) GO TO 500
+	  IF(FWIM.EQ.0) GO TO 400		! already got something?
+	  FWIM=-FWIM				! yes, ambiguous.
+	  RETURN
+C
+400	  FWIM=I				! note match.
+C
+C Does object contain a match?
+C
+C 500	  IF((OFLAG2(I).AND.OPENBT).EQ.0) GO TO 1000 ! closed?
+500	  IF((AND(OFLAG2(I),OPENBT)).EQ.0) GO TO 1000 ! closed?
+	  DO 700 J=1,OLNT			! no, search contents.
+C	    IF((OCAN(J).NE.I).OR.((OFLAG1(J).AND.VISIBT).EQ.0) .OR.
+C	&	(((OFLAG1(J).AND.F1).EQ.0).AND.
+C	&	 ((OFLAG2(J).AND.F2).EQ.0))) GO TO 700
+	    IF((OCAN(J).NE.I).OR.((AND(OFLAG1(J),VISIBT)).EQ.0) .OR.
+	&	(((AND(OFLAG1(J),F1)).EQ.0).AND.
+	&	 ((AND(OFLAG2(J),F2)).EQ.0))) GO TO 700
+	    IF(FWIM.EQ.0) GO TO 600
+	    FWIM=-FWIM
+	    RETURN
+C
+600	    FWIM=J
+700	  CONTINUE
+1000	CONTINUE
+	RETURN
+C
+	END
+C %page
+C ORPHAN- Set up orphans for parser
+C
+C Declarations
+C
+	SUBROUTINE ORPHAN(OR1,OR2,OR3,OR4,OR5,OR6,OR7,OR8)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	CHARACTER*(*) OR6
+C
+	OFLAG=OR1
+	OACT=OR2
+	OPREP1=OR3
+	OOBJ1=OR4
+	OPREP=OR5
+	ONAME=OR6
+	OPREP2=OR7
+	OOBJ2=OR8
+	RETURN
+C
+	END
+C %page
+C YESNO- Obtain yes/no answer
+C
+C Called by-
+C
+C	YES-IS-TRUE=YESNO(QUESTION,YES-STRING,NO-STRING)
+C
+	LOGICAL FUNCTION YESNO(Q,Y,N)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	CHARACTER*1 ANS
+C
+100	CALL RSPEAK(Q)				! ask
+	READ(INPCH,110,END=120) ANS		! get answer
+110	FORMAT(A)
+	IF((ANS.EQ.'Y').OR.(ANS.EQ.'y')) GO TO 200
+	IF((ANS.EQ.'N').OR.(ANS.EQ.'n')) GO TO 300
+120	CALL RSPEAK(6)				! scold.
+	GO TO 100
+C
+200	YESNO=.TRUE.				! yes,
+	CALL RSPEAK(Y)				! out with it.
+	RETURN
+C
+300	YESNO=.FALSE.				! no,
+	CALL RSPEAK(N)				! likewise.
+	RETURN
+C
+	END
+C %page
+C ROBADV-- Steal winner's valuables
+C
+C Declarations
+C
+	INTEGER FUNCTION ROBADV(ADV,NR,NC,NA)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	ROBADV=0				! count objects
+	DO 100 I=1,OLNT
+C	  IF((OADV(I).NE.ADV).OR.(OTVAL(I).LE.0).OR.
+C	&	((OFLAG2(I).AND.SCRDBT).NE.0)) GO TO 100
+	  IF((OADV(I).NE.ADV).OR.(OTVAL(I).LE.0).OR.
+	&	((AND(OFLAG2(I),SCRDBT)).NE.0)) GO TO 100
+	  CALL NEWSTA(I,0,NR,NC,NA)		! steal object
+	  ROBADV=ROBADV+1
+100	CONTINUE
+	RETURN
+C
+	END
+C %page
+C ROBRM-- Steal room valuables
+C
+C Declarations
+C
+	INTEGER FUNCTION ROBRM(RM,PR,NR,NC,NA)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL PROB,QHERE
+C
+	ROBRM=0					! count objects
+	DO 100 I=1,OLNT				! loop on objects.
+	  IF(.NOT. QHERE(I,RM)) GO TO 100
+C	  IF((OTVAL(I).LE.0).OR.((OFLAG2(I).AND.SCRDBT).NE.0).OR.
+C	&	((OFLAG1(I).AND.VISIBT).EQ.0).OR.(.NOT.PROB(PR,PR)))
+C	&	GO TO 50
+	  IF((OTVAL(I).LE.0).OR.((AND(OFLAG2(I),SCRDBT)).NE.0).OR.
+	&	((AND(OFLAG1(I),VISIBT)).EQ.0).OR.(.NOT.PROB(PR,PR)))
+	&	GO TO 50
+	  CALL NEWSTA(I,0,NR,NC,NA)
+	  ROBRM=ROBRM+1
+C	  OFLAG2(I)=OFLAG2(I).OR.TCHBT
+	  OFLAG2(I)=OR(OFLAG2(I),TCHBT)
+	  GO TO 100
+C 50	  IF((OFLAG2(I).AND.ACTRBT).NE.0)
+C 	&	ROBRM=ROBRM+ROBADV(OACTOR(I),NR,NC,NA)
+50	  IF((AND(OFLAG2(I),ACTRBT)).NE.0)
+	&	ROBRM=ROBRM+ROBADV(OACTOR(I),NR,NC,NA)
+100	CONTINUE
+	RETURN
+C
+	END
+C %page
+C WINNIN-- See if villain is winning
+C
+C Declarations
+C
+	LOGICAL FUNCTION WINNIN(VL,HR)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL PROB
+C
+	VS=OCAPAC(VL)				! villain strength
+	PS=VS-FIGHTS(HR,.TRUE.)			! his margin over hero
+	WINNIN=PROB(90,100)
+	IF(PS.GT.3) RETURN			! +3... 90% winning
+	WINNIN=PROB(75,85)
+	IF(PS.GT.0) RETURN			! >0... 75% winning
+	WINNIN=PROB(50,30)
+	IF(PS.EQ.0) RETURN			! =0... 50% winning
+	WINNIN=PROB(25,25)
+	IF(VS.GT.1) RETURN			! any villain strength.
+	WINNIN=PROB(10,0)
+	RETURN
+C
+	END

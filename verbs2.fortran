@@ -1,0 +1,341 @@
+C VALUAC- Handles valuables/everything/possessions/bunch object
+C	  for take, put, drop, count
+C
+C Declarations
+C
+	SUBROUTINE VALUAC(V)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL LIT,F,F1,TAKE,PUT,DROP,NOTHIS,NOHERE,QHERE,QBUNCH
+C
+C Functions and data
+C
+	NOTHIS(R)=((SAVEP.EQ.BUNOBJ).AND.QBUNCH(R)) .OR.
+	&	  ((OTVAL(R).LE.0).AND.((SAVEP.EQ.VALUA).OR.
+	&	   ((SAVEP.EQ.BUNOBJ).AND.(BUNSUB.EQ.VALUA)))) .OR.
+	&	  ((OADV(R).NE.WINNER).AND.((SAVEP.EQ.POSSE).OR.
+	&	   ((SAVEP.EQ.BUNOBJ).AND.(BUNSUB.EQ.POSSE))))
+
+	NOHERE(R)=((AV.EQ.0).AND..NOT.QHERE(R,HERE)) .OR.
+	&	  ((AV.NE.0).AND.(OCAN(R).NE.AV))
+C %page
+C VALUAC, PAGE 2
+C Count
+C
+	IF((PRSA.NE.COUNTW).OR.(PRSO.NE.POSSE)) GO TO 100
+	K=0
+	DO 50 J=1,OLNT				! count possessions.
+	  IF(OADV(J).EQ.WINNER) K=K+1
+50	CONTINUE
+	IF(K.EQ.1) WRITE(OUTCH,60) K
+	IF(K.NE.1) WRITE(OUTCH,70) K
+60	FORMAT(' You have ',I1,' possession.')
+70	FORMAT(' You have ',I2,' possessions.')
+	TELFLG=.TRUE.
+	RETURN
+C
+100	IF((PRSA.NE.COUNTW).OR.(PRSO.NE.VALUA)) GO TO 200
+	K=0
+	L=0
+	DO 150 J=1,OLNT				! count treasures.
+	  IF((OADV(J).EQ.WINNER).AND.(OTVAL(J).GT.0)) K=K+1
+	  IF((OCAN(J).EQ.TCASE).AND.(OTVAL(J).GT.0)) L=L+1
+150	CONTINUE
+	IF(K.EQ.1) WRITE(OUTCH,160) K
+	IF(K.NE.1) WRITE(OUTCH,170) K
+160	FORMAT(' You have ',I1,' valuable.')
+170	FORMAT(' You have ',I2,' valuables.')
+	TELFLG=.TRUE.
+	IF(HERE.NE.LROOM) RETURN
+	IF(L.EQ.1) WRITE(OUTCH,180) L
+	IF(L.NE.1) WRITE(OUTCH,190) L
+180	FORMAT(' Your adventure has netted ',I1,' treasure.')
+190	FORMAT(' Your adventure has netted ',I2,' treasures.')
+	RETURN
+C %page
+C VALUAC, PAGE 3
+C Take
+C
+200	SAVEP=PRSO				! save prso.
+	SAVEH=HERE				! save here.
+	F=.TRUE.				! assume no actions.
+	I=579					! assume not lit.
+	AV=AVEHIC(WINNER)			! get vehicle.
+C
+	IF(PRSA.NE.TAKEW) GO TO 1000		! take?
+	IF(.NOT.LIT(HERE)) GO TO 4500		! if not lit, punt.
+	IF((PRSO.NE.BUNOBJ).OR.(BUNSUB.NE.0)) GO TO 400	! bunch, no except?
+	DO 300 I=1,BUNLNT			! loop through bunch.
+	  PRSO=BUNVEC(I)			! get next item.
+	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=TAKE(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+300	CONTINUE
+	GO TO 4000				! go clean up.
+C
+400	DO 500 PRSO=1,OLNT			! loop thru objects.
+C	  IF((((OFLAG1(PRSO).AND.TAKEBT).EQ.0).AND.
+C	&	((OFLAG2(PRSO).AND.TRYBT).EQ.0)).OR.
+C	&	((OFLAG1(PRSO).AND.VISIBT).EQ.0).OR.
+C	&	((OFLAG2(PRSO).AND.ACTRBT).NE.0).OR.
+C	&	NOTHIS(PRSO)) GO TO 500
+	  IF(((AND(OFLAG1(PRSO),TAKEBT).EQ.0).AND.
+	&	(AND(OFLAG2(PRSO),TRYBT).EQ.0)).OR.
+	&	(AND(OFLAG1(PRSO),VISIBT).EQ.0).OR.
+	&	(AND(OFLAG2(PRSO),ACTRBT).NE.0).OR.
+	&	NOTHIS(PRSO)) GO TO 500
+	  IF(.NOT.NOHERE(PRSO)) GO TO 450	! is it here?
+	  J=OCAN(PRSO)				! get container.
+	  IF((J.EQ.0).OR.(PRSO.EQ.WATER)) GO TO 500	! in a cont?
+C	  IF(((OFLAG2(J).AND.OPENBT).EQ.0).OR.
+C	&	(NOHERE(J).AND.(OADV(J).NE.WINNER)))
+C	&	GO TO 500			! in open cont here?
+	  IF((AND(OFLAG2(J),OPENBT).EQ.0).OR.
+	&	(NOHERE(J).AND.(OADV(J).NE.WINNER)))
+	&	GO TO 500			! in open cont here?
+C
+450	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=TAKE(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+500	CONTINUE
+	GO TO 4000				! go clean up.
+C %page
+C VALUAC, PAGE 4
+C Drop
+C
+1000	IF(PRSA.NE.DROPW) GO TO 2000		! drop?
+	IF((PRSO.NE.BUNOBJ).OR.(BUNSUB.NE.0)) GO TO 1400 ! bunch, no except?
+	DO 1300 I=1,BUNLNT			! loop through bunch.
+	  PRSO=BUNVEC(I)			! get next item.
+	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=DROP(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+1300	CONTINUE
+	GO TO 4000				! go clean up.
+C
+1400	DO 1500 PRSO=1,OLNT			! loop through inventory.
+	  IF((OADV(PRSO).NE.WINNER).OR.NOTHIS(PRSO))
+	&	GO TO 1500
+	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=DROP(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+1500	CONTINUE
+	GO TO 4000				! go clean up.
+C %page
+C VALUAC, PAGE 5
+C Put
+C
+2000	IF(PRSA.NE.PUTW) GO TO 3000		! put?
+	IF(.NOT.LIT(HERE)) GO TO 4500		! if not lit, punt.
+	IF((PRSO.NE.BUNOBJ).OR.(BUNSUB.NE.0)) GO TO 2400 ! bunch, no except?
+	DO 2300 I=1,BUNLNT			! loop through bunch.
+	  PRSO=BUNVEC(I)			! get next item.
+	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=PUT(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+2300	CONTINUE
+	GO TO 4000				! go clean up.
+C
+2400	DO 2500 PRSO=1,OLNT			! loop thru objects.
+C	  IF(((OADV(PRSO).NE.WINNER).AND.
+C	&	(NOHERE(PRSO).OR.
+C	&	(((OFLAG1(PRSO).AND.TAKEBT).EQ.0).AND.
+C	&	 ((OFLAG2(PRSO).AND.TRYBT).EQ.0)))) .OR.
+C	&	(PRSO.EQ.PRSI).OR.NOTHIS(PRSO).OR.
+C	&	((OFLAG1(PRSO).AND.VISIBT).EQ.0)) GO TO 2500
+	  IF(((OADV(PRSO).NE.WINNER).AND.
+	&	(NOHERE(PRSO).OR.
+	&	((AND(OFLAG1(PRSO),TAKEBT).EQ.0).AND.
+	&	 (AND(OFLAG2(PRSO),TRYBT).EQ.0)))) .OR.
+	&	(PRSO.EQ.PRSI).OR.NOTHIS(PRSO).OR.
+	&	(AND(OFLAG1(PRSO),VISIBT).EQ.0)) GO TO 2500
+	  F=.FALSE.
+	  CALL RSPSUB(580,ODESC2(PRSO))
+	  F1=PUT(.TRUE.)
+	  IF(SAVEH.NE.HERE) GO TO 4500
+2500	CONTINUE
+	GO TO 4000				! go clean up.
+C
+C Wrong verb.
+C
+3000	I=677					! wrong verb.
+	GO TO 4500
+C
+C Clean up.
+C
+4000	I=581					! right verb, choose
+	IF(SAVEP.EQ.VALUA) I=582		! nothing happened message.
+4500	IF(F) CALL RSPEAK(I)			! not lit, nothing, wrong verb?
+	PRSO=SAVEP				! restore PRSO.
+	BUNSUB=0				! cancel EXCEPT/BUT.
+	RETURN
+	END
+C %page
+C QBUNCH-	Is object in bunch vector?
+C
+C Declarations
+C
+	LOGICAL FUNCTION QBUNCH(OBJ)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF(BUNLNT.EQ.0) GO TO 200		! bunch vector empty?
+	QBUNCH=.TRUE.				! assume found.
+	DO 100 I=1,BUNLNT			! search bunch vector.
+	  IF(OBJ.EQ.BUNVEC(I)) RETURN		! got one.
+100	CONTINUE
+200	QBUNCH=.FALSE.				! not found.
+	RETURN
+C
+	END
+C %page
+C SAVE- Save game state
+C
+C Declarations
+C
+	SUBROUTINE SAVEGM
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF(SUBLNT.EQ.0) SUBBUF='DSAVE.DAT'
+C	OPEN (UNIT=1,NAME=SUBBUF,ACCESS='SEQUENTIAL',
+C	&	STATUS='UNKNOWN',FORM='UNFORMATTED',ERR=100)
+	OPEN (UNIT=1,FILE=SUBBUF,ACCESS='SEQUENTIAL',
+	&	STATUS='UNKNOWN',FORM='UNFORMATTED',ERR=100)
+C
+	CALL GTTIME(I)				! get time.
+	WRITE(1) VMAJ,VMIN
+	WRITE(1) WINNER,HERE,THFPOS,TELFLG,THFFLG,THFACT,
+	&	SWDACT,SWDSTA,CPVEC
+	WRITE(1) I,MOVES,DEATHS,RWSCOR,EGSCOR,MXLOAD,
+	&	LTSHFT,BLOC,MUNGRM,HS,FROMDR,SCOLRM,SCOLAC
+	WRITE(1) ODESC1,ODESC2,OFLAG1,OFLAG2,OFVAL,OTVAL,
+	&	OSIZE,OCAPAC,OROOM,OADV,OCAN
+	WRITE(1) RDESC1,RVAL,RFLAG,TRAVEL
+	WRITE(1) AROOM,ASCORE,AVEHIC,ASTREN,AFLAG
+	WRITE(1) FLAGS,SWITCH,VPROB,CFLAG,CTICK,CCNCEL
+C
+	CALL RSPEAK(597)
+	CLOSE (UNIT=1)
+	RETURN
+C
+100	CALL RSPEAK(598)			! cant do it.
+	RETURN
+	END
+C %page
+C RESTORE- Restore game state
+C
+C Declarations
+C
+	SUBROUTINE RSTRGM
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+C
+	IF(SUBLNT.EQ.0) SUBBUF='DSAVE.DAT'
+C	OPEN (UNIT=1,NAME=SUBBUF,ACCESS='SEQUENTIAL',
+C	&	STATUS='OLD',FORM='UNFORMATTED',ERR=100)
+	OPEN (UNIT=1,FILE=SUBBUF,ACCESS='SEQUENTIAL',
+	&	STATUS='OLD',FORM='UNFORMATTED',ERR=100)
+C
+	READ(1) I,J
+	IF((I.NE.VMAJ).OR.(J.NE.VMIN)) GO TO 200
+C
+	READ(1) WINNER,HERE,THFPOS,TELFLG,THFFLG,THFACT,
+	&	SWDACT,SWDSTA,CPVEC
+	READ(1) PLTIME,MOVES,DEATHS,RWSCOR,EGSCOR,MXLOAD,
+	&	LTSHFT,BLOC,MUNGRM,HS,FROMDR,SCOLRM,SCOLAC
+	READ(1) ODESC1,ODESC2,OFLAG1,OFLAG2,OFVAL,OTVAL,
+	&	OSIZE,OCAPAC,OROOM,OADV,OCAN
+	READ(1) RDESC1,RVAL,RFLAG,TRAVEL
+	READ(1) AROOM,ASCORE,AVEHIC,ASTREN,AFLAG
+	READ(1) FLAGS,SWITCH,VPROB,CFLAG,CTICK,CCNCEL
+C
+	CALL RSPEAK(599)
+	CLOSE (UNIT=1)
+	RETURN
+C
+100	CALL RSPEAK(598)			! cant do it.
+	RETURN
+C
+200	CALL RSPEAK(600)			! obsolete version
+	CLOSE (UNIT=1)
+	RETURN
+	END
+C %page
+C WALK- Move in specified direction
+C
+C Declarations
+C
+	LOGICAL FUNCTION WALK(X)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL FINDXT,QOPEN,LIT,PROB,MOVETO,RMDESC
+C
+C Functions and data
+C
+C	QOPEN(O)=(OFLAG2(O).AND.OPENBT).NE.0
+	QOPEN(O)=AND(OFLAG2(O),OPENBT).NE.0
+C %page
+C WALK, PAGE 2
+C
+	WALK=.TRUE.				! assume wins.
+	IF((WINNER.NE.PLAYER).OR.LIT(HERE).OR.PROB(25,25))
+	&	GO TO 500
+	IF(.NOT.FINDXT(PRSO,HERE)) GO TO 450	! invalid exit? grue!
+	GO TO (400,200,100,300),XTYPE		! decode exit type.
+	CALL BUG(9,XTYPE)
+C
+100	IF(CXAPPL(XACTIO).NE.0) GO TO 400	! cexit... returned room?
+	IF(FLAGS(XFLAG)) GO TO 400		! no, flag on?
+200	CALL JIGSUP(523)			! bad exit, grue!
+	RETURN
+C
+300	IF(CXAPPL(XACTIO).NE.0) GO TO 400	! door... returned room?
+	IF(QOPEN(XOBJ)) GO TO 400		! no, door open?
+	CALL JIGSUP(523)			! bad exit, grue!
+	RETURN
+C
+400	IF(LIT(XROOM1)) GO TO 900		! valid room, is it lit?
+450	CALL JIGSUP(522)			! no, grue!
+	RETURN
+C
+C Room is lit, or winner is not player (no grue).
+C
+500	IF(FINDXT(PRSO,HERE)) GO TO 550		! exit exist?
+525	XSTRNG=678				! assume wall.
+	IF(PRSO.EQ.XUP) XSTRNG=679		! if up, cant.
+	IF(PRSO.EQ.XDOWN) XSTRNG=680		! if down, cant.
+C	IF(((RFLAG(HERE).AND.RNWALL).NE.0).AND.(WINNER.EQ.PLAYER))
+C	&	XSTRNG=524			! no wall for player.
+	IF((AND(RFLAG(HERE),RNWALL).NE.0).AND.(WINNER.EQ.PLAYER))
+	&	XSTRNG=524			! no wall for player.
+	CALL RSPEAK(XSTRNG)
+	PRSCON=0				! stop cmd stream.
+	RETURN
+C
+550	GO TO (900,600,700,800),XTYPE		! branch on exit type.
+	CALL BUG(9,XTYPE)
+C
+700	IF(CXAPPL(XACTIO).NE.0) GO TO 900	! cexit... returned room?
+	IF(FLAGS(XFLAG)) GO TO 900		! no, flag on?
+600	IF(XSTRNG.EQ.0) GO TO 525		! if no reason, use std.
+	CALL RSPEAK(XSTRNG)			! deny exit.
+	PRSCON=0				! stop cmd stream.
+	RETURN
+C
+800	IF(CXAPPL(XACTIO).NE.0) GO TO 900	! door... returned room?
+	IF(QOPEN(XOBJ)) GO TO 900		! no, door open?
+	IF(XSTRNG.EQ.0) XSTRNG=525		! if no reason, use std.
+	CALL RSPSUB(XSTRNG,ODESC2(XOBJ))
+	PRSCON=0				! stop cmd stream.
+	RETURN
+C
+900	WALK=MOVETO(XROOM1,WINNER)		! move to room.
+	IF(WALK) WALK=RMDESC(0)			! describe room.
+	RETURN
+	END

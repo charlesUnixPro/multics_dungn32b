@@ -1,0 +1,1158 @@
+C NOBJS-	New objects processor
+C
+C Declarations
+C
+	LOGICAL FUNCTION NOBJS(RI,ARG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QOPEN,MOVETO,F,RMDESC
+	LOGICAL QHERE,OPNCLS,MIRPAN
+	LOGICAL LIT,WASLIT,QEMPTY
+C
+C Functions and data
+C
+C	QOPEN(R)=(OFLAG2(R).AND.OPENBT).NE.0
+	QOPEN(R)=(AND(OFLAG2(R),OPENBT)).NE.0
+C
+	ODO2=0
+	ODI2=0
+	IF((PRSO.NE.0).AND.(PRSO.LE.OMAX)) ODO2=ODESC2(PRSO)
+	IF(PRSI.NE.0) ODI2=ODESC2(PRSI)
+	AV=AVEHIC(WINNER)
+	NOBJS=.TRUE.
+	WASLIT=LIT(HERE)
+C
+	GO TO (1000,2000,3000,4000,5000,6000,7000,8000,9000,
+	& 10000,11000,12000,13000,14000,15000,16000,17000,
+	& 18000,19000,20000,21000,22000,23000,24000,25000,
+	& 26000,27000,28000,29000,30000,31000,32000,33000,
+	& 34000,35000,36000,37000,38000,39000,40000,41000,
+	& 42000,43000,44000,45000,46000),
+	&	(RI-31)
+	CALL BUG(6,RI)
+C
+C Return here to declare false result.
+C
+10	NOBJS=.FALSE.
+	RETURN
+C
+C Return here to test for light source change.
+C
+50	IF(WASLIT.AND..NOT.LIT(HERE)) CALL RSPEAK(406)
+	RETURN
+C page
+C NOBJS, PAGE 3
+C
+C O32--	Bills
+C
+1000	IF(PRSA.NE.EATW) GO TO 1100		! eat?
+	CALL RSPEAK(639)			! joke.
+	RETURN
+C
+1100	IF(PRSA.EQ.BURNW) CALL RSPEAK(640)	! burn?  joke.
+	GO TO 10				! let it be handled.
+C
+C O33--	Screen of light
+C
+2000	TARGET=SCOL				! target is scol.
+2100	IF(PRSO.NE.TARGET) GO TO 2400		! prso eq target?
+	IF((PRSA.NE.PUSHW).AND.(PRSA.NE.MOVEW).AND.
+	&	(PRSA.NE.TAKEW).AND.(PRSA.NE.RUBW)) GO TO 2200
+	CALL RSPEAK(673)			! hand passes thru.
+	RETURN
+C
+2200	IF((PRSA.NE.KILLW).AND.(PRSA.NE.ATTACW).AND.
+	&	(PRSA.NE.MUNGW)) GO TO 2400	! aggressive?
+	CALL RSPSUB(674,ODI2)			! passes thru.
+	RETURN
+C
+2400	IF((PRSA.NE.THROWW).OR.(PRSI.NE.TARGET)) GO TO 10
+	IF(HERE.EQ.BKBOX) GO TO 2600		! thru scol?
+	CALL NEWSTA(PRSO,0,BKBOX,0,0)		! no, thru wall.
+	CALL RSPSUB(675,ODO2)			! ends up in box room.
+	CTICK(CEVSCL)=0				! cancel alarm.
+	SCOLRM=0				! reset scol room.
+	GO TO 50				! go see if now dark.
+C
+2600	IF(SCOLRM.EQ.0) GO TO 2900		! tried to go thru?
+	CALL NEWSTA(PRSO,0,SCOLRM,0,0)		! success.
+	CALL RSPSUB(676,ODO2)			! ends up somewhere.
+	CTICK(CEVSCL)=0				! cancel alarm.
+	SCOLRM=0				! reset scol room.
+	GO TO 50				! go see if now dark.
+C
+2900	CALL RSPEAK(213)			! cant do it.
+	RETURN
+C page
+C NOBJS, PAGE 4
+C
+C O34--	Gnome of Zurich
+C
+3000	IF((PRSA.NE.GIVEW).AND.(PRSA.NE.THROWW)) GO TO 3200
+	IF(OTVAL(PRSO).NE.0) GO TO 3100		! throw a treasure?
+	IF((PRSO.NE.BRICK).OR.(OCAN(FUSE).NE.BRICK).OR.
+	&	(CTICK(CEVFUS).EQ.0)) GO TO 3050 ! a bomb?
+	CALL NEWSTA(ZGNOM,931,0,0,0)		! gnome leaves.
+	CALL NEWSTA(BRICK,0,HERE,0,0)		! brick on floor.
+	CFLAG(CEVZGO)=.FALSE.			! stop gnome timers.
+	CFLAG(CEVZGI)=.FALSE.
+	RETURN
+C
+3050	CALL NEWSTA(PRSO,641,0,0,0)		! no, go pop.
+	RETURN
+C
+3100	CALL NEWSTA(PRSO,0,0,0,0)		! yes, bye bye treasure.
+	CALL RSPSUB(642,ODO2)
+	CALL NEWSTA(ZGNOM,0,0,0,0)		! bye bye gnome.
+	CFLAG(CEVZGO)=.FALSE.			! cancel exit.
+	F=MOVETO(BKENT,WINNER)			! now in bank entrance.
+	RETURN
+C
+3200	IF((PRSA.NE.ATTACW).AND.(PRSA.NE.KILLW).AND.
+	&	(PRSA.NE.MUNGW)) GO TO 3300	! aggressive?
+	CALL NEWSTA(ZGNOM,643,0,0,0)		! vanish gnome.
+	CFLAG(CEVZGO)=.FALSE.			! cancel exit.
+	RETURN
+C
+3300	CALL RSPEAK(644)			! gnome is impatient.
+	RETURN
+C
+C O35--	Egg
+C
+4000	IF((PRSA.NE.OPENW).OR.(PRSO.NE.EGG)) GO TO 4500
+	IF(.NOT.QOPEN(EGG)) GO TO 4100		! open already?
+	CALL RSPEAK(649)			! yes.
+	RETURN
+C
+4100	IF(PRSI.NE.0) GO TO 4200		! with something?
+	CALL RSPEAK(650)			! no, cant.
+	RETURN
+C
+4200	IF(PRSI.NE.HANDS) GO TO 4300		! with hands?
+	CALL RSPEAK(651)			! not recommended.
+	RETURN
+C
+4300	I=652					! mung message.
+C	IF(((OFLAG1(PRSI).AND.TOOLBT).NE.0).OR.
+C	&	((OFLAG2(PRSI).AND.WEAPBT).NE.0)) GO TO 4600
+	IF(((AND(OFLAG1(PRSI),TOOLBT)).NE.0).OR.
+	&	((AND(OFLAG2(PRSI),WEAPBT)).NE.0)) GO TO 4600
+	I=653					! novelty 1.
+C	IF((OFLAG2(PRSO).AND.FITEBT).NE.0) I=654 ! novelty 2.
+	IF((AND(OFLAG2(PRSO),FITEBT)).NE.0) I=654 ! novelty 2.
+C	OFLAG2(PRSO)=OFLAG2(PRSO).OR.FITEBT
+	OFLAG2(PRSO)=OR(OFLAG2(PRSO),FITEBT)
+	CALL RSPSUB(I,ODI2)
+	RETURN
+C
+4500	IF(PRSA.NE.MUNGW) GO TO 10		! mung?
+	I=655					! you blew it.
+4600	CALL NEWSTA(BEGG,I,OROOM(EGG),OCAN(EGG),OADV(EGG))
+	CALL NEWSTA(EGG,0,0,0,0)		! vanish egg.
+	IF(LASTIT.EQ.EGG) LASTIT=BEGG		! fix last it reference.
+	OTVAL(BEGG)=2				! bad egg has value.
+	IF(OCAN(CANAR).NE.EGG) GO TO 4700	! was canary inside?
+	CALL RSPEAK(ODESCO(BCANA))		! yes, describe result.
+	OTVAL(BCANA)=1
+	RETURN
+C
+4700	CALL NEWSTA(BCANA,0,0,0,0)		! no, vanish it.
+	RETURN
+C page
+C NOBJS, PAGE 5
+C
+C O36--	Canaries, good and bad
+C
+5000	IF(PRSA.NE.WINDW) GO TO 10		! wind em up?
+	IF(PRSO.EQ.CANAR) GO TO 5100		! right one?
+	CALL RSPEAK(645)			! no, bad news.
+	RETURN
+C
+5100	IF(.NOT.SINGSF.AND.((HERE.EQ.MTREE).OR.
+	&	((HERE.GE.FORE1).AND.(HERE.LT.CLEAR))))
+	&	GO TO 5200			! first song in for?
+	CALL RSPEAK(646)			! no, mediocre news.
+	RETURN
+C
+5200	SINGSF=.TRUE.				! sang song.
+	CALL NEWSTA(BAUBL,647,HERE,0,0)		! place bauble.
+	IF(HERE.EQ.MTREE) CALL NEWSTA(BAUBL,0,FORE3,0,0)
+	RETURN
+C
+C O37--	White cliffs
+C
+6000	IF((PRSA.NE.CLMBW).AND.(PRSA.NE.CLMBUW).AND.
+	&	(PRSA.NE.CLMBDW)) GO TO 10	! climb?
+	CALL RSPEAK(648)			! oh yeah?
+	RETURN
+C
+C O38--	Wall 
+C
+7000	IF((IABS(HERE-MLOC).NE.1).OR.(MRHERE(HERE).NE.0).OR.
+	&	.NOT.ENDGMF) GO TO 7100		! mirror wall in endgame?
+	IF(PRSA.NE.PUSHW) GO TO 10		! pushed?
+	CALL RSPEAK(860)			! pushed mirror wall.
+	RETURN
+C
+C 7100	IF((RFLAG(HERE).AND.RNWALL).EQ.0) GO TO 10
+7100	IF((AND(RFLAG(HERE),RNWALL)).EQ.0) GO TO 10
+	CALL RSPEAK(662)			! no wall.
+	RETURN
+C page
+C NOBJS, PAGE 6
+C
+C O39--	Global bird
+C
+8000	IF(PRSA.NE.FINDW) GO TO 8100		! find?
+	CALL RSPEAK(666)
+	RETURN
+C
+8100	IF(PRSA.NE.EXAMIW) GO TO 10		! examine?
+	CALL RSPEAK(667)
+	RETURN
+C
+C O40--	Puzzle/Scol walls
+C
+9000	IF(HERE.NE.CPUZZ) GO TO 9500		! puzzle walls?
+	IF(PRSA.NE.PUSHW) GO TO 10		! push?
+	DO 9100 I=1,8,2				! locate wall.
+	  IF(PRSO.EQ.CPWL(I)) GO TO 9200
+9100	CONTINUE
+	CALL BUG(80,PRSO)			! what?
+C
+9200	J=CPWL(I+1)				! get directional offset.
+	NXT=CPHERE+J				! get next state.
+	WL=CPVEC(NXT)				! get c(next state).
+	GO TO (9300,9300,9300,9250,9350),(WL+4)	! process.
+C
+9250	CALL RSPEAK(876)			! clear corridor.
+	RETURN
+C
+9300	IF(CPVEC(NXT+J).EQ.0) GO TO 9400	! movable, room to move?
+9350	CALL RSPEAK(877)			! immovable, no room.
+	RETURN
+C
+9400	I=878					! assume first push.
+	IF(CPUSHF) I=879			! not?
+	CPUSHF=.TRUE.
+	CPVEC(NXT+J)=WL				! move wall.
+	CPVEC(NXT)=0				! vacate next state.
+	CALL CPGOTO(NXT)			! onward.
+	CALL CPINFO(I,NXT)			! describe.
+	CALL PRINCR(.TRUE.,HERE)		! print rooms contents.
+	RETURN
+C
+9500	IF(HERE.NE.SCOLAC) GO TO 9700		! in scol active room?
+	DO 9600 I=1,12,3
+	  TARGET=SCOLWL(I+1)			! assume target.
+	  IF(SCOLWL(I).EQ.HERE) GO TO 2100	! treat if found.
+9600	CONTINUE
+C
+9700	IF(HERE.NE.BKBOX) GO TO 10		! in box room?
+	TARGET=WNORT
+	GO TO 2100
+C page
+C NOBJS, PAGE 7
+C
+C O41--	Short pole
+C
+10000	IF(PRSA.NE.RAISEW) GO TO 10100		! lift?
+	I=749					! assume up.
+	IF(POLEUF.EQ.2) I=750			! already up?
+	CALL RSPEAK(I)
+	POLEUF=2				! pole is raised.
+	RETURN
+C
+10100	IF((PRSA.NE.LOWERW).AND.(PRSA.NE.PUSHW)) GO TO 10
+	IF(POLEUF.NE.0) GO TO 10200		! already lowered?
+	CALL RSPEAK(751)			! cant do it.
+	RETURN
+C
+10200	IF(MOD(MDIR,180).NE.0) GO TO 10300	! mirror n-s?
+	POLEUF=0				! yes, lower into
+	CALL RSPEAK(752)			! channel.
+	RETURN
+C
+10300	IF((MDIR.NE.270).OR.(MLOC.NE.MRB)) GO TO 10400
+	POLEUF=0				! lower into hole.
+	CALL RSPEAK(753)
+	RETURN
+C
+10400	CALL RSPEAK(753+POLEUF)			! poleuf = 1 or 2.
+	POLEUF=1				! now on floor.
+	RETURN
+C
+C O42--	Mirror switch
+C
+11000	IF(PRSA.NE.PUSHW) GO TO 10		! push?
+	IF(MRPSHF) GO TO 11300			! already pushed?
+	CALL RSPEAK(756)			! button goes in.
+	DO 11100 I=1,OLNT			! blocked?
+	  IF(QHERE(I,MREYE).AND.(I.NE.RBEAM)) GO TO 11200
+11100	CONTINUE
+	CALL RSPEAK(757)			! nothing in beam.
+	RETURN
+C
+11200	CFLAG(CEVMRS)=.TRUE.			! mirror opens.
+	CTICK(CEVMRS)=7
+	MRPSHF=.TRUE.
+	MROPNF=.TRUE.
+	RETURN
+C
+11300	CALL RSPEAK(758)			! mirror already open.
+	RETURN
+C page
+C NOBJS, PAGE 8
+C
+C O43--	Beam function
+C
+12000	IF((PRSA.NE.TAKEW).OR.(PRSO.NE.RBEAM)) GO TO 12100
+	CALL RSPEAK(759)			! take beam, joke.
+	RETURN
+C
+12100	I=PRSO					! assume blk with dirobj.
+	IF((PRSA.EQ.PUTW).AND.(PRSI.EQ.RBEAM)) GO TO 12200
+	IF((PRSA.NE.MUNGW).OR.(PRSO.NE.RBEAM).OR.
+	&	(PRSI.EQ.0)) GO TO 10		! break beam with x?
+	I=PRSI
+12200	IF(OADV(I).NE.WINNER) GO TO 12300	! carrying?
+	CALL NEWSTA(I,0,HERE,0,0)		! drop obj.
+	CALL RSPSUB(760,ODESC2(I))
+	RETURN
+C
+12300	J=761					! assume not in room.
+	IF(QHERE(I,HERE)) J=762			! in room?
+	CALL RSPSUB(J,ODESC2(I))		! describe.
+	RETURN
+C
+C O44--	Bronze door
+C
+13000	IF((HERE.EQ.NCELL).OR.((LCELL.EQ.4).AND.
+	&	((HERE.EQ.CELL).OR.(HERE.EQ.SCORR))))
+	&	GO TO 13100
+	CALL RSPEAK(763)			! door not there.
+	RETURN
+C
+13100	IF(.NOT.OPNCLS(ODOOR,764,765)) GO TO 10	! open/close?
+	IF((HERE.EQ.NCELL).AND.QOPEN(ODOOR))
+	&	CALL RSPEAK(766)		! descr view.
+	RETURN
+C
+C O45--	Quiz door
+C
+14000	IF((PRSA.NE.OPENW).AND.(PRSA.NE.CLOSEW)) GO TO 14100
+	CALL RSPEAK(767)			! door wont move.
+	RETURN
+C
+14100	IF(PRSA.NE.KNOCKW) GO TO 10		! knock?
+	IF(INQSTF) GO TO 14200			! tried it already?
+	INQSTF=.TRUE.				! start inquisition.
+	CFLAG(CEVINQ)=.TRUE.
+	CTICK(CEVINQ)=2
+	QUESNO=RND(8)				! select question.
+	NQATT=0
+	CORRCT=0
+	CALL RSPEAK(768)			! announce rules.
+	CALL RSPEAK(769)
+	CALL RSPEAK(770+QUESNO)			! ask question.
+	RETURN
+C
+14200	CALL RSPEAK(798)			! no reply.
+	RETURN
+C
+C O46--	Locked door
+C
+15000	IF(PRSA.NE.OPENW) GO TO 10		! open?
+	CALL RSPEAK(778)			! cant.
+	RETURN
+C
+C O47--	Cell door
+C
+16000	NOBJS=OPNCLS(CDOOR,779,780)		! open/close?
+	RETURN
+C page
+C NOBJS, PAGE 9
+C
+C O48--	Dialbutton
+C
+17000	IF(PRSA.NE.PUSHW) GO TO 10		! push?
+	CALL RSPEAK(809)			! click.
+	IF(QOPEN(CDOOR)) CALL RSPEAK(810)	! close cell door.
+C	OFLAG2(CDOOR)=OFLAG2(CDOOR).AND. .NOT.OPENBT
+	OFLAG2(CDOOR)=AND(OFLAG2(CDOOR), COMPL(OPENBT))
+C	OFLAG2(ODOOR)=OFLAG2(ODOOR).AND. .NOT.OPENBT
+	OFLAG2(ODOOR)=AND(OFLAG2(ODOOR), COMPL(OPENBT))
+	IF(LCELL.EQ.PNUMB) RETURN		! any change?
+C
+	DO 17100 I=1,OLNT			! relocate old to hyper.
+C	  IF((OROOM(I).EQ.CELL).AND.((OFLAG1(I).AND.DOORBT).EQ.0))
+C	&	CALL NEWSTA(I,0,LCELL*HFACTR,0,0)
+	  IF((OROOM(I).EQ.CELL).AND.((AND(OFLAG1(I),DOORBT)).EQ.0))
+	&	CALL NEWSTA(I,0,LCELL*HFACTR,0,0)
+	  IF(OROOM(I).EQ.(PNUMB*HFACTR))
+	&	CALL NEWSTA(I,0,CELL,0,0)	! move in new hyper.
+17100	CONTINUE
+C
+C	OFLAG1(ODOOR)=OFLAG1(ODOOR).AND. .NOT.VISIBT
+	OFLAG1(ODOOR)=AND(OFLAG1(ODOOR), COMPL(VISIBT))
+C	IF(PNUMB.EQ.4) OFLAG1(ODOOR)=OFLAG1(ODOOR).OR.VISIBT
+	IF(PNUMB.EQ.4) OFLAG1(ODOOR)=OR(OFLAG1(ODOOR),VISIBT)
+C
+	IF(AROOM(PLAYER).NE.CELL) GO TO 17400	! player in cell?
+	IF(LCELL.NE.4) GO TO 17200		! in right cell?
+C	OFLAG1(ODOOR)=OFLAG1(ODOOR).OR. VISIBT
+	OFLAG1(ODOOR)=OR(OFLAG1(ODOOR), VISIBT)
+	F=MOVETO(NCELL,PLAYER)			! yes, moveto ncell.
+	GO TO 17400
+17200	F=MOVETO(PCELL,PLAYER)			! no, moveto pcell.
+C
+17400	LCELL=PNUMB
+	RETURN
+C page
+C NOBJS, PAGE 10
+C
+C O49--	Dial indicator
+C
+18000	IF((PRSA.NE.OPENW).OR.(PRSO.NE.BOOK)) GO TO 18100	! open book?
+	PNUMB=RND(8)+1				! whee!
+	CALL RSPSUB(797,712+PNUMB)
+	RETURN
+C
+18100	IF((PRSA.NE.MOVEW).AND.(PRSA.NE.PUTW).AND.
+	&	(PRSA.NE.TRNTOW)) GO TO 10
+	IF(PRSI.NE.0) GO TO 18200		! turn dial to x?
+	CALL RSPEAK(806)			! must specify.
+	RETURN
+C
+18200	IF((PRSI.GE.NUM1).AND.(PRSI.LE.NUM8)) GO TO 18300
+	CALL RSPEAK(807)			! must be digit.
+	RETURN
+C
+18300	PNUMB=PRSI-NUM1+1			! set up new.
+	CALL RSPSUB(808,712+PNUMB)
+	RETURN
+C
+C O50--	Global mirror
+C
+19000	NOBJS=MIRPAN(832,.FALSE.)
+	RETURN
+C
+C O51--	Global panel
+C
+20000	IF(HERE.NE.FDOOR) GO TO 20100		! at front door?
+	IF((PRSA.NE.OPENW).AND.(PRSA.NE.CLOSEW)) GO TO 10
+	CALL RSPEAK(843)			! panel in door, nogo.
+	RETURN
+C
+20100	NOBJS=MIRPAN(838,.TRUE.)
+	RETURN
+C
+C O52--	Puzzle Room slit
+C
+21000	IF((PRSA.NE.PUTW).OR.(PRSI.NE.CSLIT)) GO TO 10
+	IF(PRSO.NE.GCARD) GO TO 21100		! put card in slit?
+	CALL NEWSTA(PRSO,863,0,0,0)		! kill card.
+	CPOUTF=.TRUE.				! open door.
+	RETURN
+C
+C 21100	IF(((OFLAG1(PRSO).AND.VICTBT).EQ.0).AND.
+C	&  ((OFLAG2(PRSO).AND.VILLBT).EQ.0)) GO TO 21200
+21100	IF(((AND (OFLAG1(PRSO),VICTBT)).EQ.0).AND.
+	&  ((AND (OFLAG2(PRSO),VILLBT)).EQ.0)) GO TO 21200
+	CALL RSPEAK(552+RND(6))			! joke for vill, vict.
+	RETURN
+C
+21200	CALL NEWSTA(PRSO,0,0,0,0)		! kill object.
+	CALL RSPSUB(864,ODO2)			! describe.
+	RETURN
+C page
+C NOBJS, PAGE 11
+C
+C O53--	Global brochure or stamp
+C
+22000	IF(PRSO.NE.STAMP) GO TO 22100		! stamp?
+C	IF(PRSA.EQ.TAKEW) OFLAG1(BROCH)=OFLAG1(BROCH).AND..NOT.CONTBT
+	IF(PRSA.EQ.TAKEW) OFLAG1(BROCH)=AND(OFLAG1(BROCH),COMPL(CONTBT))
+	GO TO 10				! do normal take.
+C
+22100	IF((PRSO.NE.BROCH).OR.
+	&  ((PRSA.NE.EXAMIW).AND.(PRSA.NE.READW)))
+	&  GO TO 22200				! examine brochure?
+	CALL RSPEAK(942)			! describe.
+	IF(OCAN(STAMP).EQ.BROCH) CALL RSPEAK(943)
+	RETURN
+C
+22200	IF((PRSA.NE.FINDW).OR..NOT.BROC1F) GO TO 22300
+	CALL RSPEAK(944)			! on the way.
+	RETURN
+C
+22300	IF(PRSA.NE.SENDW) GO TO 22400		! send?
+	IF(BROC2F) CALL RSPEAK(945)		! already got it.
+	IF(BROC1F.AND..NOT.BROC2F) CALL RSPEAK(944)	! on the way.
+	IF(.NOT.BROC1F) CALL RSPEAK(947)	! postal service.
+	BROC1F=.TRUE.				! send for brochure.
+	RETURN
+C
+22400	IF(PRSO.NE.GBROCH) GO TO 10		! global brochure?
+	CALL RSPEAK(1071)			! pretend it's not there.
+	RETURN
+C
+C O54--	Global ground
+C
+23000	IF(HERE.EQ.SBEACH) GO TO 36000		! at sandy beach? then sand.
+	IF(PRSA.NE.DIGW) GO TO 10		! dig?
+	CALL RSPEAK(924)			! can't do it.
+	RETURN
+C
+C O55--	Global granite wall
+C
+24000	I=916					! joke for take.
+	IF(PRSA.EQ.TAKEW) GO TO 24100		! take?
+	I=918					! temple, treasure find.
+	IF(HERE.EQ.SLIDE) I=917			! slide find.
+	IF(PRSA.NE.FINDW) GO TO 10		! find?
+24100	CALL RSPEAK(I)				! tell all.
+	RETURN
+C page
+C NOBJS, PAGE 12
+C
+C O56--	Global house
+C
+25000	IF((HERE.GE.WHOUS).AND.(HERE.LE.EHOUS)) GO TO 25200
+	IF(PRSA.NE.FINDW) GO TO 25100		! find, not at house?
+	I=892					! joke 1.
+	IF(HERE.EQ.CLEAR) I=893			! joke 2 for clearing.
+	CALL RSPEAK(I)
+	RETURN
+C
+25100	CALL RSPEAK(894)			! not there.
+	RETURN
+C
+25200	IF(PRSA.NE.FINDW) GO TO 25300		! find, at house?
+	CALL RSPEAK(895)			! right there.
+	RETURN
+C
+25300	IF(PRSA.NE.EXAMIW) GO TO 25400		! look at?
+	CALL RSPEAK(896)			! a nice house.
+	RETURN
+C
+25400	IF(PRSA.NE.BURNW) GO TO 25500		! burn?
+	CALL RSPEAK(897)			! bad boy.
+	RETURN
+C
+25500	IF(PRSA.NE.GTHROW) GO TO 10		! go through?
+	IF(HERE.EQ.EHOUS) GO TO 25600		! at east side?
+	CALL RSPEAK(898)			! can't do it
+	RETURN
+C
+25600	IF(QOPEN(WINDO)) GO TO 25700		! window open?
+	CALL RSPEAK(899)			! no, shut
+	RETURN
+C
+25700	F=MOVETO(KITCH,WINNER)			! move into kitchen.
+	F=RMDESC(0)				! describe room
+	RETURN
+C
+C O57--	Barred window in white house
+C
+26000	IF((PRSA.NE.OPENW).AND.(PRSA.NE.LOOKIW).AND.
+	&  (PRSA.NE.GTHROW)) GO TO 26100	! open, look in, enter?
+	CALL RSPEAK(1039)			! window barred.
+	RETURN
+C
+26100	IF(PRSA.NE.CLOSEW) GO TO 10		! close?
+	CALL RSPEAK(1040)			! already closed and locked.
+	RETURN
+C page
+C NOBJS, PAGE 13
+C
+C O58--	Global well
+C
+C 27000	IF(((OFLAG1(PRSO).AND.TAKEBT).EQ.0).OR.(PRSO.EQ.WATER).OR.
+27000	IF(((AND(OFLAG1(PRSO),TAKEBT)).EQ.0).OR.(PRSO.EQ.WATER).OR.
+	&  ((PRSA.NE.THROWW).AND.(PRSA.NE.PUTW).AND.(PRSA.NE.DROPW)))
+	&  GO TO 10				! throw, put, drop x in well?
+	CALL RSPSUB(939,ODO2)
+	CALL NEWSTA(PRSO,0,BWELL,0,0)		! put in well bottom.
+	GO TO 50				! go see if now dark.
+C
+C O59--	Global rope
+C
+28000	IF(PRSA.NE.TAKEW) GO TO 28100		! take?
+	CALL RSPEAK(1006)			! not a good idea.
+	RETURN
+C
+28100	IF(PRSA.NE.DROPW) GO TO 28300		! drop?
+	CALL RSPEAK(1007)			! you lose.
+28200	F=MOVETO(CELLA,WINNER)			! drop into cellar.
+	F=RMDESC(3)				! describe.
+	RETURN
+C
+28300	IF((PRSA.EQ.CLMBW).OR.(PRSA.EQ.CLMBUW).OR.
+	&  (PRSA.EQ.CLMBDW)) GO TO 10		! normal climb.
+	CALL RSPEAK(1008)			! not a good idea.
+	RETURN
+C
+C O60--	Global slide
+C
+29000	IF((PRSA.NE.GTHROW).AND.
+	& ((PRSA.NE.PUTW).OR.(PRSO.NE.AOBJ(PLAYER)))) GO TO 29100
+	CALL RSPEAK(1010)			! down the slide.
+	GO TO 28200
+C
+29100	IF(PRSA.NE.PUTW) GO TO 10		! put in slide?
+C	IF((OFLAG1(PRSO).AND.TAKEBT).NE.0) GO TO 29200
+	IF((AND(OFLAG1(PRSO),TAKEBT)).NE.0) GO TO 29200
+	CALL RSPEAK(552+RND(6))			! can't take it.
+	RETURN
+C
+29200	IF(PRSO.NE.TTIE) GO TO 29300		! tied object?
+C	OFLAG1(TTIE)=OFLAG1(TTIE).AND..NOT.NDSCBT
+	OFLAG1(TTIE)=AND(OFLAG1(TTIE),COMPL(NDSCBT))
+	OFLAG1(ROPE)=AND(OFLAG1(ROPE),COMPL(NDSCBT))
+C	OFLAG2(ROPE)=OFLAG2(ROPE).AND..NOT.CLMBBT
+	OFLAG2(ROPE)=AND(OFLAG2(ROPE),COMPL(CLMBBT))
+	ODESC1(TIMBE)=1032			! restored untied desc.
+	ODESC1(COFFI)=1033
+	TTIE=0					! not tied any more.
+	CALL NEWSTA(ROPE,0,CELLA,0,0)		! rope is now here.
+29300	CALL RSPSUB(1011,ODO2)
+	CALL NEWSTA(PRSO,0,CELLA,0,0)		! put in cellar,
+	IF(PRSO.EQ.WATER) CALL NEWSTA(PRSO,0,0,0,0)	! unless water.
+	GO TO 50				! go see if now dark.
+C page
+C NOBJS, PAGE 14
+C
+C O61--	Barrel
+C
+30000	IF(ARG.NE.1) GO TO 10			! read in?
+	I=0					! default.
+	IF(PRSA.EQ.WALKW) I=920			! walk?
+	IF(PRSA.EQ.LOOKW) I=921			! look?
+	IF(PRSA.EQ.BURNW) I=922			! burn?
+	IF(PRSA.EQ.TAKEW) I=552+RND(6)		! take?
+	CALL RSPEAK(I)
+	NOBJS=I.NE.0				! handled?
+	RETURN
+C
+C O62--	Hot bell
+C
+31000	IF(PRSA.NE.TAKEW) GO TO 31100		! take?
+	CALL RSPEAK(972)			! too hot.
+	RETURN
+C
+31100	IF(PRSA.NE.RINGW) GO TO 31400		! ring?
+	IF(PRSI.NE.0) GO TO 31200		! with something?
+	CALL RSPEAK(973)			! too hot.
+	RETURN
+C
+C 31200	IF((OFLAG1(PRSI).AND.BURNBT).EQ.0) GO TO 31300
+31200	IF((AND (OFLAG1(PRSI),BURNBT)).EQ.0) GO TO 31300
+	CALL RSPSUB(974,ODI2)			! burnable is consumed.
+	CALL NEWSTA(PRSI,0,0,0,0)		! vanish it.
+	RETURN
+C
+31300	I=975					! joke 1.
+	IF(PRSI.EQ.HANDS) I=973			! joke for hands.
+	CALL RSPEAK(I)
+	RETURN
+C
+31400	IF(PRSA.NE.PORONW) GO TO 10		! pour on?
+	CALL NEWSTA(HBELL,0,0,0,0)		! vanish bell.
+	CALL NEWSTA(BELL,976,LLD1,0,0)		! insert real bell.
+	IF(LASTIT.EQ.HBELL) LASTIT=BELL		! fix last it reference.
+	CALL NEWSTA(PRSO,0,0,0,0)		! vanish water.
+	CTICK(CEVXBH)=0				! cancel cooling.
+	RETURN
+C
+C O63--	Axe
+C
+32000	IF(PRSA.NE.TAKEW) GO TO 10		! take?
+	CALL RSPEAK(891)			! too hot.
+	RETURN
+C page
+C NOBJS, PAGE 15
+C
+C O64--	Timber (also coffin)
+C
+33000	IF((PRSA.NE.TAKEW).OR.(PRSO.NE.TTIE)) GO TO 10
+	CALL RSPSUB(1009,ODO2)			! rope becomes untied.
+C	OFLAG1(TTIE)=OFLAG1(TTIE).AND..NOT.NDSCBT
+	OFLAG1(TTIE)=AND(OFLAG1(TTIE),COMPL(NDSCBT))
+C	OFLAG1(ROPE)=OFLAG1(ROPE).AND..NOT.NDSCBT
+	OFLAG1(ROPE)=AND(OFLAG1(ROPE),COMPL(NDSCBT))
+C	OFLAG2(ROPE)=OFLAG2(ROPE).AND..NOT.CLMBBT
+	OFLAG2(ROPE)=AND(OFLAG2(ROPE),COMPL(CLMBBT))
+	ODESC1(TIMBE)=1032			! restored untied desc.
+	ODESC1(COFFI)=1033
+	TTIE=0					! not tied any more.
+	CALL NEWSTA(ROPE,0,HERE,0,0)		! rope is now here.
+	GO TO 10				! don't handle.
+C
+C O65--	Guano
+C
+34000	IF(PRSA.NE.DIGW) GO TO 10		! dig?
+	RVGUA=MIN0(4,RVGUA+1)			! go to next state.	
+	CALL RSPEAK(91+RVGUA)			! describe.
+	RETURN
+C
+C O66--	Alice room leak
+C
+35000	IF(PRSA.NE.TAKEW) GO TO 35100		! take?
+	CALL RSPEAK(552+RND(6))			! joke.
+	RETURN
+C
+35100	IF((PRSA.NE.PLUGW).OR.(PRSO.NE.PLEAK)) GO TO 10	! plug leak?
+	CALL RSPEAK(929)			! can't reach.
+	RETURN
+C page
+C NOBJS, PAGE 16
+C
+C O67--	Sand
+C
+36000	IF(PRSA.NE.DIGW) GO TO 10		! dig?
+	RVSND=RVSND+1				! go to next state.
+	GO TO (36100,36100,36100,36400,36500),RVSND	! process
+	CALL BUG(2,RVSND)
+C
+36100	CALL RSPEAK(85+RVSND)			! 1..3, describe.
+	RETURN
+C
+C 36400	IF((OFLAG1(STATU).AND.VISIBT).EQ.0) CALL RSPEAK(89)
+36400	IF((AND(OFLAG1(STATU),VISIBT)).EQ.0) CALL RSPEAK(89)
+C	OFLAG1(STATU)=OFLAG1(STATU).OR.VISIBT	! 4, statue appears.
+	OFLAG1(STATU)=OR(OFLAG1(STATU),VISIBT)	! 4, statue appears.
+	RETURN
+C
+36500	RVSND=0					! 5, sand collapses.
+C	IF(OROOM(STATU).EQ.HERE)
+C	&	OFLAG1(STATU)=OFLAG1(STATU).AND..NOT.VISIBT
+	IF(OROOM(STATU).EQ.HERE)
+	&	OFLAG1(STATU)=AND(OFLAG1(STATU),COMPL(VISIBT))
+	CALL JIGSUP(90)				! gonzo.
+	RETURN
+C
+C O68--	Torch
+C
+37000	IF(PRSA.NE.TRNOFW) GO TO 10		! extinguish?
+	CALL RSPEAK(900)			! can't do it.
+	RETURN
+C
+C O69--	Tool chests
+C
+38000	IF(PRSA.NE.EXAMIW) GO TO 38100		! examine?
+	CALL RSPEAK(907)			! describe.
+	RETURN
+C
+38100	IF(PRSA.NE.TAKEW) GO TO 10		! take?
+	CALL RSPEAK(908)			! can't do it.
+	RETURN
+C page
+C NOBJS, PAGE 17
+C
+C O70--	Palantir door
+C
+39000	IF((PRSA.NE.LOOKUW).OR..NOT.MATF) GO TO 39100
+	CALL RSPEAK(995)			! mat under door.
+	RETURN
+C
+39100	IF(PRSA.NE.UNLOKW) GO TO 39500		! unlock?
+	IF(PRSI.NE.PKEY) GO TO 39400		! with rusty key?
+39200	IF((OCAN(PKEY).EQ.(HERE-PRM+PKH1)).OR.
+	&	QEMPTY(HERE-PRM+PKH1)) GO TO 39300	! keyhole empty?
+39250	CALL RSPEAK(991)			! no
+	RETURN
+C
+39300	CALL RSPEAK(996)			! now unlocked.
+	PUNLKF=.TRUE.
+	RETURN
+C
+39400	I=997					! joke 1.
+	IF(PRSI.EQ.KEYS) I=998			! joke 2 for keys.
+	CALL RSPEAK(I)
+	RETURN
+C
+39500	IF(PRSA.NE.LOCKW) GO TO 39700		! lock?
+	IF(PRSI.EQ.PKEY) GO TO 39600		! with rusty key?
+	CALL RSPEAK(999)			! no
+	RETURN
+C
+39600	IF((OCAN(PKEY).NE.(HERE-PRM+PKH1)).AND.
+	&	.NOT.QEMPTY(HERE-PRM+PKH1)) GO TO 39250
+	CALL RSPEAK(1000)			! now locked.
+	PUNLKF=.FALSE.
+	RETURN
+C
+39700	IF((PRSA.NE.PUTUNW).OR.((PRSO.NE.BLABE).AND.
+	&  (PRSO.NE.LABEL).AND.(PRSO.NE.CARD).AND.
+	&  (PRSO.NE.WARNI).AND.(PRSO.NE.RBTLB).AND.
+	&  (PRSO.NE.GUIDE))) GO TO 39800	! put small paper?
+C	CALL NEWSTA(PRSO,1001,HERE.XOR.1,0,0)	! put in other room.
+	CALL NEWSTA(PRSO,1001,INT(XOR(HERE,1)),0,0)	! put in other room.
+	RETURN
+C
+39800	IF((PRSA.NE.OPENW).AND.(PRSA.NE.CLOSEW)) GO TO 10
+	IF(.NOT.PUNLKF) GO TO 39900		! open or close, unlocked?
+	NOBJS=OPNCLS(PRSO,1002,1003)		! open or close.
+	RETURN
+C
+39900	CALL RSPEAK(1000)			! door locked.
+	RETURN
+C
+C O71--	Palantir window
+C
+40000	IF(PRSA.NE.GTHROW) GO TO 40100		! go through?
+	CALL RSPEAK(1004)			! can't do it.
+	RETURN
+C
+40100	IF(PRSA.NE.LOOKIW) GO TO 10		! look in?
+	IF(QOPEN(PDOOR)) GO TO 40200		! door open?
+	PLOOKF=.TRUE.				! set window flag.
+C	SVFLAG=RFLAG(HERE.XOR.1)		! save room flags from other.
+	SVFLAG=RFLAG(INT(XOR(HERE,1)))		! save room flags from other.
+C	F=MOVETO(HERE.XOR.1,WINNER)		! go to other room.
+	F=MOVETO(INT(XOR(HERE,1)),WINNER)		! go to other room.
+	F=RMDESC(3)				! describe it.
+C	F=MOVETO(HERE.XOR.1,WINNER)		! come back.
+	F=MOVETO(INT(XOR(HERE,1)),WINNER)		! come back.
+C	RFLAG(HERE.XOR.1)=SVFLAG		! restore flags.
+	RFLAG(INT(XOR(HERE,1)))=SVFLAG	! restore flags.
+	RETURN
+C
+40200	CALL RSPEAK(1005)			! door open, dummy.
+	RETURN
+C page
+C NOBJS, PAGE 18
+C
+C O72--	Keyhole lids
+C
+41000	IF((PRSA.NE.OPENW).AND.(PRSA.NE.RAISEW)) GO TO 41100
+	CALL RSPEAK(985)			! open lid.
+C	OFLAG2(PRSO)=OFLAG2(PRSO).OR.OPENBT
+	OFLAG2(PRSO)=OR(OFLAG2(PRSO),OPENBT)
+	RETURN
+C
+41100	IF((PRSA.NE.CLOSEW).AND.(PRSA.NE.LOWERW)) GO TO 10
+	IF(QEMPTY(PRSO-PLID1+PKH1)) GO TO 41200		! keyhole empty?
+	CALL RSPEAK(986)			! can't do it.
+	RETURN
+C
+41200	CALL RSPEAK(987)			! close lid.
+C	OFLAG2(PRSO)=OFLAG2(PRSO).AND..NOT.OPENBT
+	OFLAG2(PRSO)=AND(OFLAG2(PRSO),COMPL(OPENBT))
+	RETURN
+C
+C O73--	Keyholes
+C
+42000	IF(PRSA.NE.LOOKIW) GO TO 42200		! look in?
+	I=988					! doesn't work.
+C	IF(QOPEN(PLID1).AND.QOPEN(PLID2).AND.
+C	&	QEMPTY(PKH1).AND.QEMPTY(PKH2).AND.
+C	&	LIT(HERE.XOR.1)) I=989		! does work
+	IF(QOPEN(PLID1).AND.QOPEN(PLID2).AND.
+	&	QEMPTY(PKH1).AND.QEMPTY(PKH2).AND.
+	&	LIT(INT(XOR(HERE,1)))) I=989		! does work
+	CALL RSPEAK(I)
+	RETURN
+C
+42200	IF(PRSA.NE.PUTW) GO TO 10		! put?
+	IF(QOPEN(PRSI-PKH1+PLID1)) GO TO 42300	! lid open?
+	CALL RSPEAK(990)			! no.
+	RETURN
+C
+42300	IF(QEMPTY(PRSI)) GO TO 42400		! keyhole empty?
+	CALL RSPEAK(991)			! no.
+	RETURN
+C
+42400	IF((PRSO.NE.SCREW).AND.(PRSO.NE.KEYS).AND.
+	&  (PRSO.NE.STICK).AND.(PRSO.NE.PKEY)) GO TO 42700
+C	IF(QEMPTY(PRSI.XOR.1)) GO TO 10		! nothing to shove.
+	IF(QEMPTY(INT(XOR(PRSI,1)))) GO TO 10		! nothing to shove.
+	DO 42500 I=1,OLNT
+C	  IF(OCAN(I).EQ.(PRSI.XOR.1)) GO TO 42600	! find obj in keyhole.
+	  IF(OCAN(I).EQ.(XOR(PRSI,1))) GO TO 42600	! find obj in keyhole.
+42500	CONTINUE
+C	CALL BUG(67,PRSI.XOR.1)
+	CALL BUG(67,INT(XOR(PRSI,1)))
+C
+C 42600	CALL NEWSTA(I,992,HERE.XOR.1,0,0)	! obj falls to floor.
+42600	CALL NEWSTA(I,992,INT(XOR(HERE,1)),0,0)	! obj falls to floor.
+	IF(MATF) MATOBJ=I			! if mat, falls on that.
+	GO TO 10				! finish put.
+C
+42700	CALL RSPSUB(993,ODO2)			! doesn't fit.
+	RETURN
+C page
+C NOBJS, PAGE 19
+C
+C O74--	Rusty key
+C
+43000	IF(PRSA.NE.TURNW) GO TO 10		! turn?
+	IF(PUNLKF) GO TO 39600			! unlock?
+	GO TO 39200				! otherwise lock.
+C
+C O75--	Palantirs
+C
+44000	IF(PRSA.NE.LOOKIW) GO TO 10		! look in?
+	OBJ=PALAN				! assume dest = palan.
+	IF(PRSO.EQ.PALAN) OBJ=PAL3		! if palan, then pal3.
+	IF(PRSO.EQ.PAL3) OBJ=SPHER		! if pal3, then sphere.
+	J=HERE					! save here.
+	K=OCAN(OBJ)				! get dest container.
+	IF(OROOM(OBJ).NE.0) J=OROOM(OBJ)	! if dest in room, use.
+	IF(K.NE.0) J=OROOM(K)			! if cont, use cont room.
+	IF((J.EQ.0).OR.(OADV(OBJ).EQ.-THIEF)) GO TO 44200
+	IF(.NOT.LIT(J)) GO TO 44200		! see destination?
+	IF(K.EQ.0) GO TO 44100			! contained?
+C	IF(((OFLAG1(K).AND.TRANBT).EQ.0).AND..NOT.QOPEN(K))
+	IF(((AND(OFLAG1(K),TRANBT)).EQ.0).AND..NOT.QOPEN(K))
+	&	GO TO 44200			! see out of it?
+44100	CALL RSPEAK(1024)			! start vision.
+C	OFLAG1(OBJ)=OFLAG1(OBJ).AND..NOT.VISIBT	! object not visible.
+	OFLAG1(OBJ)=AND(OFLAG1(OBJ),COMPL(VISIBT))	! object not visible.
+	SVHERE=HERE				! save state.
+	SVFLAG=RFLAG(J)
+	F=MOVETO(J,WINNER)			! move to new room.
+	F=RMDESC(3)				! describe.
+	IF(J.EQ.SVHERE) CALL RSPEAK(1026)	! was it here?
+	F=MOVETO(SVHERE,WINNER)			! come back.
+	RFLAG(J)=SVFLAG				! restore flags.
+C	OFLAG1(OBJ)=OFLAG1(OBJ).OR.VISIBT	! restore object.
+	OFLAG1(OBJ)=OR(OFLAG1(OBJ),VISIBT)	! restore object.
+	RETURN
+C
+44200	CALL RSPEAK(1023)			! nothing to see.
+	RETURN
+C
+C O76--	Mat
+C
+45000	IF((PRSA.NE.PUTUNW).OR.(PRSI.NE.PDOOR)) GO TO 45100
+	MATF=.TRUE.				! put under right door.
+	CALL NEWSTA(PRSO,983,HERE,0,0)
+	RETURN
+C
+45100	IF(((PRSA.NE.TAKEW).AND.(PRSA.NE.MOVEW)).OR.(MATOBJ.EQ.0)) 
+	&	GO TO 10			! take or move?
+	CALL NEWSTA(MATOBJ,0,HERE,0,0)		! materialize mat object.
+	CALL RSPSUB(984,ODESC2(MATOBJ))
+	MATOBJ=0
+	MATF=.FALSE.
+	IF(PRSA.EQ.TAKEW) GO TO 10		! do normal take.
+	RETURN					! move is done.
+C
+C O77--	Stove
+C
+46000	IF((PRSA.NE.TAKEW).AND.(PRSA.NE.RUBW).AND.
+	&  (PRSA.NE.ATTACW).AND.(PRSA.NE.MUNGW))
+	&  GO TO 46100				! take, feel, attack, mung?
+	CALL RSPEAK(994)			! too hot.
+	RETURN
+C
+46100	IF(PRSA.NE.THROWW) GO TO 10		! throw at stove?
+	IF(PRSO.NE.WATER) GO TO 46200		! water?
+	CALL NEWSTA(WATER,978,0,0,0)		! evaporates.
+	RETURN
+C
+C 46200	IF((OFLAG1(PRSO).AND.BURNBT).EQ.0) GO TO 10	! burnable?
+46200	IF((AND(OFLAG1(PRSO),BURNBT)).EQ.0) GO TO 10	! burnable?
+	CALL RSPSUB(974,ODO2)			! burns up.
+	CALL NEWSTA(PRSO,0,0,0,0)		! vanishes.
+	RETURN
+C
+	END
+C page
+C MIRPAN--	Processor for global mirror/panel
+C
+C Declarations
+C
+	LOGICAL FUNCTION MIRPAN(ST,PNF)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL PNF
+C
+	MIRPAN=.TRUE.
+	NUM=MRHERE(HERE)			! get mirror num.
+	IF(NUM.NE.0) GO TO 100			! any here?
+	CALL RSPEAK(ST)				! no, lose.
+	RETURN
+C
+100	IF((PRSA.NE.MOVEW).AND.(PRSA.NE.OPENW)) GO TO 200
+	CALL RSPEAK(ST+1)			! cant open or move.
+	RETURN
+C
+200	MRBF=0					! assume mirror ok.
+	IF(((NUM.EQ.1).AND..NOT.MR1F).OR.
+	&  ((NUM.EQ.2).AND..NOT.MR2F)) MRBF=1
+	IF(PNF.OR.((PRSA.NE.LOOKIW).AND.(PRSA.NE.EXAMIW).AND.
+	&	(PRSA.NE.LOOKW))) GO TO 300
+	CALL RSPEAK(844+MRBF)			! look in mirror.
+	RETURN
+C
+300	IF(PRSA.NE.MUNGW) GO TO 400		! break?
+	CALL RSPEAK(ST+2+MRBF)			! do it.
+	IF((NUM.EQ.1).AND..NOT.PNF) MR1F=.FALSE.
+	IF((NUM.EQ.2).AND..NOT.PNF) MR2F=.FALSE.
+	RETURN
+C
+400	IF(PNF.OR.(MRBF.EQ.0)) GO TO 500	! broken mirror?
+	CALL RSPEAK(846)
+	RETURN
+C
+500	IF(PRSA.NE.PUSHW) GO TO 600		! push?
+	CALL RSPEAK(ST+3+NUM)
+	RETURN
+C
+600	MIRPAN=.FALSE.				! cant handle it.
+	RETURN
+C
+	END
+C page
+C BALLOP-	Balloon function
+C
+C Declarations
+C
+	LOGICAL FUNCTION BALLOP(ARG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL FINDXT,QEMPTY
+C
+	BALLOP=.TRUE.				! assume wins.
+	IF(ARG.NE.2) GO TO 200			! readout?
+	IF(PRSA.NE.LOOKW) GO TO 10		! only process look.
+	IF(BINFF.NE.0) GO TO 50			! inflated?
+	CALL RSPEAK(543)			! no.
+	GO TO 100
+50	CALL RSPSUB(544,ODESC2(BINFF))		! yes.
+100	IF(BTIEF.NE.0) CALL RSPEAK(545)		! hooked?
+	GO TO 10
+C
+200	IF(ARG.NE.1) GO TO 500			! readin?
+	IF(PRSA.NE.WALKW) GO TO 300		! walk?
+	IF(FINDXT(PRSO,HERE)) GO TO 250		! valid exit?
+	CALL RSPEAK(546)			! no, joke.
+	RETURN
+C
+250	IF(BTIEF.EQ.0) GO TO 275		! tied up?
+	CALL RSPEAK(547)			! yes, joke.
+	RETURN
+C
+275	IF(XTYPE.NE.XNORM) GO TO 10		! normal exit?
+C	IF((RFLAG(XROOM1).AND.RMUNG).NE.0) GO TO 10
+	IF((AND(RFLAG(XROOM1),RMUNG)).NE.0) GO TO 10
+	BLOC=XROOM1
+	CFLAG(CEVBAL)=.TRUE.
+	CTICK(CEVBAL)=3
+10	BALLOP=.FALSE.
+	RETURN
+C
+300	IF((PRSA.NE.TAKEW).OR.(PRSO.NE.BINFF)) GO TO 350
+	CALL RSPSUB(548,ODESC2(BINFF))		! recep cont too hot.
+	RETURN
+C
+350	IF((PRSA.NE.PUTW).OR.(PRSI.NE.RECEP).OR.QEMPTY(RECEP))
+	&	GO TO 10			! recep already full.
+	CALL RSPEAK(549)
+	RETURN
+C
+500	IF((PRSA.NE.BURNW).OR.(OCAN(PRSO).NE.RECEP)) GO TO 10
+	CALL RSPSUB(550,ODESC2(PRSO))		! light fire in recep.
+	CFLAG(CEVBRN)=.TRUE.
+	CTICK(CEVBRN)=OSIZE(PRSO)*20
+C	OFLAG1(PRSO)=(OFLAG1(PRSO).OR.(ONBT+FLAMBT+LITEBT)).AND.
+C	&	.NOT.(TAKEBT+READBT)		! burn it.
+	OFLAG1(PRSO)=AND(OR(OFLAG1(PRSO),ONBT+FLAMBT+LITEBT),
+	&	COMPL(TAKEBT+READBT))		! burn it.
+	IF(BINFF.NE.0) RETURN			! already inflated?
+	IF(.NOT.BLABF) CALL NEWSTA(BLABE,0,0,BALLO,0)	! insert label.
+	BLABF=.TRUE.				! only once.
+	BINFF=PRSO
+	CFLAG(CEVBAL)=.TRUE.
+	CTICK(CEVBAL)=3				! start countdown.
+	CALL RSPEAK(551)
+	RETURN
+C
+	END
+C page
+C TROLLP-	Troll function
+C
+C Declarations
+C
+	LOGICAL FUNCTION TROLLP(ARG)
+	IMPLICIT INTEGER (A-Z)
+	%include dparam
+	LOGICAL QHERE,PROB
+C
+	TROLLP=.TRUE.				! assume wins.
+	IF(PRSA.NE.FIGHTW) GO TO 1100		! fight?
+	IF(OCAN(AXE).EQ.TROLL) GO TO 10		! got axe?  nothing.
+	I=433					! assume cant get.
+	IF(.NOT.QHERE(AXE,HERE).OR.PROB(25,10)) GO TO 1050	! here?
+	I=434					! yes, recover.
+	CALL NEWSTA(AXE,0,0,TROLL,0)
+1050	IF(QHERE(TROLL,HERE)) CALL RSPEAK(I)	! if player here.
+	RETURN
+C
+1100	IF(PRSA.NE.DEADXW) GO TO 1200		! dead?
+	TROLLF=.TRUE.				! permit exits.
+	RETURN
+C
+1200	IF(PRSA.NE.OUTXW) GO TO 1300		! out?
+	TROLLF=.TRUE.				! permit exits.
+C	OFLAG1(AXE)=OFLAG1(AXE).AND. .NOT.VISIBT
+	OFLAG1(AXE)=AND(OFLAG1(AXE), COMPL(VISIBT))
+	ODESC1(TROLL)=435			! troll out.
+	RETURN
+C
+1300	IF((PRSA.NE.INXW).AND.			! wake from fight demon?
+	&  (((PRSA.NE.ALARMW).AND.(PRSA.NE.KICKW)).OR.
+	&    (OCAPAC(TROLL).GE.0))) GO TO 1400	! wake, kick while out?
+	OCAPAC(TROLL)=IABS(OCAPAC(TROLL))	! yes, wake him.
+C	OFLAG1(AXE)=OFLAG1(AXE).OR.VISIBT
+	OFLAG1(AXE)=OR (OFLAG1(AXE),VISIBT)
+	TROLLF=.FALSE.				! forbid exits.
+	ODESC1(TROLL)=436			! troll in.
+	IF(QHERE(TROLL,HERE)) CALL RSPEAK(437)
+	RETURN
+C
+1400	IF(PRSA.NE.FRSTQW) GO TO 1500		! first encounter?
+	TROLLP=PROB(33,66)			! 33% true unless badlk.
+	RETURN
+C
+1500	IF((PRSA.NE.MOVEW).AND.(PRSA.NE.TAKEW).AND.(PRSA.NE.MUNGW)
+	&	.AND.(PRSA.NE.THROWW).AND.(PRSA.NE.GIVEW)) GO TO 2000
+	IF(OCAPAC(TROLL).GE.0) GO TO 1550	! troll out?
+	OCAPAC(TROLL)=IABS(OCAPAC(TROLL))	! yes, wake him.
+C	OFLAG1(AXE)=OFLAG1(AXE).OR.VISIBT
+	OFLAG1(AXE)=OR(OFLAG1(AXE),VISIBT)
+	TROLLF=.FALSE.				! forbid exits.
+	ODESC1(TROLL)=436			! troll in.
+	CALL RSPEAK(437)
+C
+1550	IF((PRSA.NE.TAKEW).AND.(PRSA.NE.MOVEW)) GO TO 1600
+	CALL RSPEAK(438)			! joke.
+	RETURN
+C
+1600	IF(PRSA.NE.MUNGW) GO TO 1700		! mung?
+	CALL RSPEAK(439)			! joke.
+	RETURN
+C
+1700	IF(PRSO.EQ.0) GO TO 10			! no object?
+	I=440					! assume throw.
+	IF(PRSA.EQ.GIVEW) I=441			! give?
+	CALL RSPSUB(I,ODESC2(PRSO))		! troll takes.
+	IF(PRSO.EQ.KNIFE) GO TO 1900		! obj knife?
+	CALL NEWSTA(PRSO,442,0,0,0)		! no, eats it.
+	RETURN
+C
+1900	CALL RSPEAK(443)			! knife, throws it back
+	OFLAG2(TROLL)=OR(OFLAG2(TROLL),FITEBT)	! and gets mad.
+	RETURN
+C
+2000	IF(.NOT.TROLLF.OR.(PRSA.NE.HELLOW)) GO TO 10
+	CALL RSPEAK(366)			! troll out.
+	RETURN
+C
+10	TROLLP=.FALSE.				! couldnt handle it.
+	RETURN
+C
+	END
