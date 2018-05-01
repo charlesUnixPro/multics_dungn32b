@@ -11,7 +11,7 @@ C
 	GO TO (1000,2000,3000,4000,5000,6000,7000,8000,
 	&	9000,10000,11000,12000,13000,14000,15000),RI
 	CALL BUG(5,RI)
-C %page
+C page
 C CXAPPL, PAGE 2
 C
 C C1-	Coffin-cure
@@ -65,7 +65,7 @@ C
 6000	IF(CAROFF) GO TO 2500			! if flipped, go spin.
 	FROBZF=.TRUE.				! otherwise, an exit.
 	RETURN
-C %page
+C page
 C CXAPPL, PAGE 3
 C
 C C7-	Frobozz flag (bank alarm)
@@ -112,7 +112,7 @@ C
 9100	FROBZF=.FALSE.				! not here,
 	XSTRNG=817				! lose.
 	RETURN
-C %page
+C page
 C CXAPPL, PAGE 4
 C
 C C10-	Frobozz flag (mirror exit)
@@ -155,7 +155,7 @@ C C13-	CPOUTF (Puzzle Room size entrance)
 C
 13000	CPHERE=52				! set substate.
 	RETURN
-C %page
+C page
 C CXAPPL, PAGE 5
 C
 C C14-	Frobozz flag (Puzzle Room transitions)

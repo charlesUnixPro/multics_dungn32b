@@ -68,7 +68,7 @@ C
 100	IF(RI.LT.32) OAPPLI=SOBJS(RI,ARG)
 	IF(RI.GE.32) OAPPLI=NOBJS(RI,ARG)
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 3
 C
 C O100--	Machine
@@ -155,7 +155,7 @@ C
 5900	IF(PRSA.NE.THROWW) GO TO 10		! last chance, throw?
 	CALL NEWSTA(PRSO,132,0,0,0)		! vanishes.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 4
 C
 C O102--	Leaf pile
@@ -206,7 +206,7 @@ C
 	CALL NEWSTA(RKNIF,0,0,0,0)		! kill knife.
 	CALL JIGSUP(161)			! kill him.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 5
 C
 C O105--	Glacier
@@ -255,7 +255,7 @@ C
 	CALL NEWSTA(BOOK,0,0,0,0)		! vanish book.
 	CALL JIGSUP(182)			! fatal joke.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 6
 C
 C O107--	Candles
@@ -368,7 +368,7 @@ C
 	F=RMDESC(0)
 	PRSCON=0				! disable parser.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 7
 C
 C O114--	Stick
@@ -411,7 +411,7 @@ C
 	IF(I.NE.0) CALL NEWSTA(LCASE,0,LROOM,0,0) ! if robbed, make large case.
 	CALL JIGSUP(261)			! kill him.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 8
 C
 C O117--	Sphere
@@ -515,7 +515,7 @@ C
 	F=MOVETO(OROOM(BUCKE),WINNER)		! move adventurer.
 	F=RMDESC(0)				! describe room.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 9
 C
 C O121--	Eatme cake
@@ -609,7 +609,7 @@ C
 	WINNER=PLAYER				! can't kill someone else.
 	CALL JIGSUP(287)			! kill, no joke.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 10
 C
 C O125--	Panels inside mirror
@@ -684,7 +684,7 @@ C
 57600	CALL RSPEAK(744)			! door open, die.
 	CALL JIGSUP(743)
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 11
 C
 C O127--	Global guardians
@@ -741,7 +741,7 @@ C	OFLAG2(TOMB)=OFLAG2(TOMB).AND..NOT.OPENBT
 	CFLAG(CEVSTE)=.TRUE.
 	CTICK(CEVSTE)=3				! if in crypt, start eg.
 	RETURN
-C %page
+C page
 C OAPPLI, PAGE 12
 C
 C O131--	Global ladder
@@ -765,7 +765,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C SOBJS-	Simple objects processor
 C
 C Declarations
@@ -807,7 +807,7 @@ C Return here to test for light source change.
 C
 50	IF(WASLIT.AND..NOT.LIT(HERE)) CALL RSPEAK(406)
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 3
 C
 C O1--	Gunk
@@ -831,7 +831,7 @@ C
 4100	IF(PRSA.NE.MUNGW) GO TO 10		! mung?
 	CALL NEWSTA(BOTTL,131,0,0,0)		! breaks.
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 4
 C
 C O4--	Rope
@@ -957,7 +957,7 @@ C
 	&	QOPEN(DOOR)) GO TO 10		! look under rug?
 	CALL RSPEAK(345)
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 5
 C
 C O8--	Skeleton
@@ -998,7 +998,7 @@ C
 	BADLKF=.TRUE.
 	CALL RSPEAK(I)
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 6
 C
 C O10--	Dumbwaiter
@@ -1040,7 +1040,7 @@ C
 C
 17100	CALL RSPEAK(179)			! joke.
 	GO TO 10				! don't handle.
-C %page
+C page
 C SOBJS, PAGE 7
 C
 C O12--	Tube
@@ -1083,7 +1083,7 @@ C
 	ODESC1(PRSO)=207
 	ODESC2(PRSO)=206
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 8
 C
 C O15--	Bolt
@@ -1190,7 +1190,7 @@ C
 C
 31600	CALL RSPEAK(227)			! lid is up.
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 9
 C
 C O20--	Leak
@@ -1273,7 +1273,7 @@ C
 	CALL NEWSTA(DBOAT,0,0,0,0)		! kill defl boat, repl.
 	IF(LASTIT.EQ.DBOAT) LASTIT=IBOAT	! fix last it reference.
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 10
 C
 C O24--	Rubber boat
@@ -1394,7 +1394,7 @@ C
 	CALL RSPSUB(1066,ODO2)			! kill direct object, too.
 	CALL NEWSTA(PRSO,0,0,0,0)
 	RETURN
-C %page
+C page
 C SOBJS, PAGE 11
 C
 C O30--	Robot

@@ -68,7 +68,7 @@ C
 1540	FORMAT(' SCHLST- RESULT   ',I6)
 	RETURN
 	END
-C %page
+C page
 C SCHLST--	Search for object
 C
 C Declarations
@@ -144,7 +144,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C THISIT--	Validate object vs description
 C
 C Declarations
@@ -175,7 +175,7 @@ C
 500	THISIT=.TRUE.
 	RETURN
 	END
-C %page
+C page
 C SYNMCH--	Syntax matcher
 C
 C Declarations
@@ -190,7 +190,7 @@ C
 	CHARACTER*(WRDLNT) FINDVB,FINDPR,LCIFY,LCWORD
 	CHARACTER*(WRDLNT+2) LCPRP1,LCPRP2
 	external dtext_$read (descriptors)
-C %page
+C page
 C SYNMCH, PAGE 2
 C
 	SYNMCH=.FALSE.
@@ -246,7 +246,7 @@ C	IF((VFLAG.AND.SDRIV).NE.0) DRIVE=J	! if driver, record.
 2510	FORMAT(' SYNMCH DEFAULT SYNTAXES- ',5I7)
 3000	J=NEWJ
 	IF(J.LT.LIMIT) GO TO 200		! more to do?
-C %page
+C page
 C SYNMCH, PAGE 3
 C
 C Match has failed.  If default syntax exists, try to snarf
@@ -298,7 +298,7 @@ C	READ(DBCH,REC=X) J,STR			! read data base.
 3880	FORMAT(1X,A,A,'what',A,'the ',A,'?')
 	TELFLG=.TRUE.
 	RETURN
-C %page
+C page
 C SYNMCH, PAGE 4
 C
 C Try to fill indirect object slot if that was the problem.
@@ -343,7 +343,7 @@ C
 10000	CALL RSPEAK(601)			! cant do anything.
 	BUNSUB=0
 	RETURN
-C %page
+C page
 C SYNMCH, PAGE 5
 C
 C Now try to take individual objects and
@@ -367,7 +367,7 @@ C 7000	PRSA=VFLAG.AND.SVMASK			! get verb.
 	RETURN
 C
 	END
-C %page
+C page
 C UNPACK-	Unpack syntax specification, adv pointer
 C
 C Declarations
@@ -417,7 +417,7 @@ C	IF((IOBJ.AND.VEBIT).EQ.0) RETURN	! vbit = vfwim?
 	RETURN
 C
 	END
-C %page
+C page
 C SYNEQL-	Test for syntax equality
 C
 C Declarations

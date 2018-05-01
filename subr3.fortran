@@ -57,7 +57,7 @@ C	&    ((OFLAG2(I).AND.TCHBT).EQ.0)) GO TO 3000
 	RETURN
 C
 	END
-C %page
+C page
 C MOVETO- Move player to new room
 C
 C Declarations
@@ -107,7 +107,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C SCORE-- Print out current score
 C
 C Declarations
@@ -158,7 +158,7 @@ C
 150	FORMAT(' Your score in the endgame is',$)
 C
 	END
-C %page
+C page
 C SCRUPD- Update winner's score
 C
 C Declarations
@@ -179,7 +179,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C FINDXT- Find exit from room
 C
 C Declarations

@@ -74,7 +74,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C GWIM- Get what I mean in ambiguous situations
 C
 C Declarations
@@ -123,7 +123,7 @@ C
 600	RETURN
 C
 	END
-C %page
+C page
 C NOADJS-	See if any adjectives for object
 C
 C Declarations
@@ -141,7 +141,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C LCIFY-	"Lower case"-ify a string for printing
 C
 C Declarations
@@ -162,7 +162,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C FINDVB-	Find verb string corresponding to syntax.
 C
 C Declarations
@@ -185,7 +185,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C FINDPR-	Find preposition string corresponding to index.
 C
 C Declarations

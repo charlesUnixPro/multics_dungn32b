@@ -37,8 +37,8 @@ C
 C
 C Other parameters
 C
-C	PARAMETER (RECLNT=80)			! DTEXT.DAT record size, bytes
-	PARAMETER (RECLNT=20)			! DTEXT.DAT record size, bytes words
+	PARAMETER (RECLNT=20)			! DTEXT.DAT
+record size, words (4 bytes/word)
 	PARAMETER (TEXLNT=76)			! text buffer size, char
 	PARAMETER (WRDLNT=8)			! word length size, char
 	PARAMETER (BUNMAX=10)			! bunched objects

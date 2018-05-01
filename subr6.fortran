@@ -21,7 +21,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C GHERE--	Is global actually in this room?
 C
 C Declarations
@@ -125,7 +125,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C MRHERE--	Is mirror here?
 C
 C Declarations
@@ -156,7 +156,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C ENCRYP--	Encrypt password
 C
 C Declarations
@@ -192,7 +192,7 @@ C	  J=(UINW(I).XOR.UKEYW(I).XOR.USUM).AND.31
 	RETURN
 C
 	END
-C %page
+C page
 C CPGOTO--	Move to next state in puzzle room
 C
 C Declarations
@@ -217,7 +217,7 @@ C	&	CALL NEWSTA(I,0,CPHERE*HFACTR,0,0)
 	RETURN
 C
 	END
-C %page
+C page
 C CPINFO--	Describe puzzle room
 C
 C Declarations

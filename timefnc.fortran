@@ -31,7 +31,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C CEVAPP- Clock event applicables
 C
 C Declarations
@@ -63,7 +63,7 @@ C Return here to test for change in light.
 C
 50	IF(WASLIT.AND..NOT.LIT(HERE)) CALL RSPEAK(406)
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 2
 C
 C CEV1--	Cure clock.  Let player slowly recover.
@@ -102,7 +102,7 @@ C CEV5--	Candle.  Describe growing dimness.
 C
 5000	CALL LITINT(CANDL,ORCAND,CEVCND,CNDTCK,10) ! do candle interrupt.
 	GO TO 50				! go see if now dark.
-C %page
+C page
 C CEVAPP, PAGE 3
 C
 C CEV6--	Balloon.
@@ -212,7 +212,7 @@ C
 	CALL RSPEAK(542)
 	F=RMDESC(0)
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 4
 C
 C CEV7--	Balloon burnup.
@@ -275,7 +275,7 @@ C
 	&	CALL RSPEAK(152)
 	CALL NEWSTA(FUSE,0,0,0,0)		! kill fuse.
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 5
 C
 C CEV9--	Ledge munge.
@@ -324,7 +324,7 @@ C	IF((RFLAG(HERE).AND.RHOUSE).NE.0) I=117	! one way or another.
 	IF((AND(RFLAG(HERE),RHOUSE)).NE.0) I=117	! one way or another.
 	CALL JIGSUP(I)				! let him know.
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 6
 C
 C CEV11--	Volcano gnome entrance.
@@ -363,7 +363,7 @@ C
 15000	ENDGMF=.TRUE.				! we're in endgame.
 	CALL RSPEAK(119)			! inform of endgame.
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 7
 C
 C CEV16--	Forest murmurs.
@@ -395,7 +395,7 @@ C
 19000	CALL NEWSTA(ZGNOM,0,0,0,0)		! vanish.
 	IF(HERE.EQ.BKTWI) CALL RSPEAK(638)	! announce.
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 8
 C
 C CEV20--	Start of endgame.
@@ -446,7 +446,7 @@ C
 	IF((HERE.EQ.INMIR).OR.(MRHERE(HERE).EQ.1))
 	&	CALL RSPEAK(729)		! describe mirror.
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 9
 C
 C CEV22--	Door closes.
@@ -488,7 +488,7 @@ C
 25000	CALL NEWSTA(BROCH,948,0,MAILB,0)	! put brochure in mailbox
 	BROC2F=.TRUE.				! flag arrival
 	RETURN
-C %page
+C page
 C CEVAPP, PAGE 10
 C
 C CEV26--	Cyclops.
@@ -536,7 +536,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C LITINT-	Light interrupt processor
 C
 C Declarations
@@ -561,7 +561,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C FIGHTD- Intermove fight demon
 C
 C Declarations
@@ -574,7 +574,7 @@ C
 C Functions and data
 C
 	DATA ROUT/1/
-C %page
+C page
 C FIGHTD, PAGE 2
 C
 	DO 2400 I=1,VLNT			! loop thru villains.
@@ -630,7 +630,7 @@ C	  OFLAG2(OBJ)=OFLAG2(OBJ).AND. .NOT.(STAGBT+FITEBT)
 	  F=OAPPLI(RA,0)
 	  OCAPAC(OBJ)=IABS(OCAPAC(OBJ))
 2400	CONTINUE
-C %page
+C page
 C FIGHTD, PAGE 3
 C
 C Now do actual counterblows.
@@ -653,7 +653,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C BLOW- Strike blow
 C
 C Declarations
@@ -684,7 +684,7 @@ C
 	&	4044,2048,4050,4054,5058,4063,4067,3071,1074,
 	&	4075,1079,4080,4084,4088,4092,4096,4100,1104,
 	&	4105,2109,4111,4115,4119,4123,4127,3131,3134/
-C %page
+C page
 C BLOW, PAGE 2
 C
 	RA=OACTIO(V)				! get villain action,
@@ -744,7 +744,7 @@ C
 	IF(DEF.LE.0) RETURN			! dont allow dead def.
 	OD=FIGHTS(H,.FALSE.)
 	DWEAP=IABS(FWIM(0,WEAPBT,0,0,H,.TRUE.))	! find a weapon.
-C %page
+C page
 C BLOW, PAGE 3
 C
 C Parties are now equipped.  DEF cannot be zero.
@@ -788,7 +788,7 @@ C
 C D	TYPE 2650,RES,MI,I,J,MBASE
 C D2650	FORMAT(' BLOW 2650-- ',5I7)
 	CALL RSPSUB(I,J)			! present result.
-C %page
+C page
 C BLOW, PAGE 4
 C
 C Now apply result.
@@ -822,7 +822,7 @@ C
 	IF(HFLG) GO TO 4000			! if hero, done.
 	DWEAP=IABS(FWIM(0,WEAPBT,0,0,H,.TRUE.)) ! get new.
 	IF(DWEAP.NE.0) CALL RSPSUB(605,ODESC2(DWEAP))
-C %page
+C page
 C BLOW, PAGE 5
 C
 4000	BLOW=RES				! return result.
@@ -855,7 +855,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C SWORDD- Intermove sword demon
 C
 C Declarations

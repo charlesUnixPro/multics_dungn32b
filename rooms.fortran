@@ -34,7 +34,7 @@ C
 	& 50000,51000,52000,53000,54000,55000,56000,57000,58000,59000,
 	& 60000,61000,62000,63000,64000),RI
 	CALL BUG(1,RI)
-C %page
+C page
 C RAPPLI, PAGE 2
 C
 C R1--	East of house
@@ -83,7 +83,7 @@ C
 3600	CONTINUE
 	CALL SCRUPD(0)				! see if endgame trig.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 3
 C
 C R4--	Cellar
@@ -120,7 +120,7 @@ C
 	IF(QOPEN(GRATE)) I=29			! grate open?
 	CALL RSPEAK(I)				! describe grate.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 4
 C
 C R7--	Reservoir south
@@ -172,7 +172,7 @@ C
 	CALL RSPEAK(42)				! describe.
 	IF(MIRRMF) CALL RSPEAK(43)		! if broken, nasty remark.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 5
 C
 C R13--	Cave2
@@ -219,7 +219,7 @@ C
 	CALL SCRUPD(LTSHFT)			! score light shaft.
 	LTSHFT=0				! never again.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 6
 C
 C R16--	Machine Room
@@ -272,7 +272,7 @@ C
 20500	IF((PRSA.EQ.WALKIW).AND.CAROZF.AND..NOT.DEADF)
 	&	CALL JIGSUP(58)			! walked in, zoom, not dead.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 7
 C
 C R21--	Land of the Living Dead
@@ -330,7 +330,7 @@ C
 C
 21600	CALL JIGSUP(61)				! twice, exorcise you.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 7A
 C
 C R22--	Land of the Living Dead interior
@@ -389,7 +389,7 @@ C
 24550	  CALL NEWSTA(BCANA,0,0,0,0)		! no, vanish broken canary.
 24600	CONTINUE
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 8
 C
 C R25--	Cyclops Room
@@ -444,7 +444,7 @@ C R28--	Cliff Room
 C
 28000	DEFLAF=OADV(RBOAT).NE.WINNER		! true if not carrying.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 9
 C
 C R29--	Rivr4 Room
@@ -481,7 +481,7 @@ C
 	IF(RAINBF) I=98				! got one?
 	CALL RSPEAK(I)				! describe.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 10
 C
 C R34--	Ledge Room
@@ -523,7 +523,7 @@ C R37--	Cage Room
 C
 37000	IF(CAGESF) F=MOVETO(CAGER,WINNER)	! if solved, move.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 11
 C
 C R38--	Mirror D Room
@@ -550,7 +550,7 @@ C R42--	Mirror A Room
 C
 42000	IF(PRSA.EQ.LOOKW) CALL LOOKTO(MRB,0,0,684,681)
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 12
 C
 C R43--	Mirror C East/West
@@ -587,7 +587,7 @@ C
 	CALL RSPEAK(I)				! describe pole.
 	CALL RSPSUB(694,695+(MDIR/45))		! describe arrow.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 13
 C
 C R47--	Mirror Eye Room
@@ -631,7 +631,7 @@ C
 	IF(QOPEN(QDOOR)) I=12
 	CALL RSPSUB(708,I)
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 14
 C
 C R51--	Front Door
@@ -682,7 +682,7 @@ C
 	IF(QOPEN(ODOOR)) I=12
 	CALL RSPSUB(725,I)
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 15
 C
 C R57--	Nirvana and end of game
@@ -721,7 +721,7 @@ C	IF((OFLAG2(WARNI).AND.TCHBT).NE.0) CALL RSPEAK(869)
 C
 60100	CALL CPINFO(880,CPHERE)			! describe room.
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 16
 C
 C R61--	Palantir Room
@@ -798,7 +798,7 @@ C	OFLAG1(MAT)=OFLAG1(MAT).OR.NDSCBT
 	OFLAG1(MAT)=OR(OFLAG1(MAT),NDSCBT)
 	CALL NEWSTA(MAT,0,HERE,0,0)
 	RETURN
-C %page
+C page
 C RAPPLI, PAGE 17
 C
 C R63--	Inslide
@@ -823,7 +823,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C LOOKTO--	Describe view in mirror hallway
 C
 C Declarations
@@ -860,7 +860,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C EWTELL--	Describe e/w narrow rooms
 C
 C Declarations

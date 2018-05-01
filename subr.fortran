@@ -37,7 +37,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C RSPSB2-- Output random message with substitutable arguments
 C
 C Called by--
@@ -121,7 +121,7 @@ C
 	GO TO 200				! recheck line.
 C
 	END
-C %page
+C page
 C OBJACT-- Apply objects from parse vector
 C
 C Declarations
@@ -142,7 +142,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C BUG-- Report fatal system error
 C
 C Declarations
@@ -163,7 +163,7 @@ C
 200	FORMAT(' Game state saved in "CRASH.DAT".')
 C
 	END
-C %page
+C page
 C NEWSTA-- Set new status for object
 C
 C Called by--
@@ -181,7 +181,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C QHERE-- Test for object in room
 C
 C Declarations
@@ -199,7 +199,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C QEMPTY-- Test for object empty
 C
 C Declarations

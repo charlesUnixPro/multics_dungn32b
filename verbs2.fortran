@@ -18,7 +18,7 @@ C
 
 	NOHERE(R)=((AV.EQ.0).AND..NOT.QHERE(R,HERE)) .OR.
 	&	  ((AV.NE.0).AND.(OCAN(R).NE.AV))
-C %page
+C page
 C VALUAC, PAGE 2
 C Count
 C
@@ -52,7 +52,7 @@ C
 180	FORMAT(' Your adventure has netted ',I1,' treasure.')
 190	FORMAT(' Your adventure has netted ',I2,' treasures.')
 	RETURN
-C %page
+C page
 C VALUAC, PAGE 3
 C Take
 C
@@ -101,7 +101,7 @@ C
 	  IF(SAVEH.NE.HERE) GO TO 4500
 500	CONTINUE
 	GO TO 4000				! go clean up.
-C %page
+C page
 C VALUAC, PAGE 4
 C Drop
 C
@@ -125,7 +125,7 @@ C
 	  IF(SAVEH.NE.HERE) GO TO 4500
 1500	CONTINUE
 	GO TO 4000				! go clean up.
-C %page
+C page
 C VALUAC, PAGE 5
 C Put
 C
@@ -175,7 +175,7 @@ C
 	BUNSUB=0				! cancel EXCEPT/BUT.
 	RETURN
 	END
-C %page
+C page
 C QBUNCH-	Is object in bunch vector?
 C
 C Declarations
@@ -193,7 +193,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C SAVE- Save game state
 C
 C Declarations
@@ -227,7 +227,7 @@ C
 100	CALL RSPEAK(598)			! cant do it.
 	RETURN
 	END
-C %page
+C page
 C RESTORE- Restore game state
 C
 C Declarations
@@ -266,7 +266,7 @@ C
 	CLOSE (UNIT=1)
 	RETURN
 	END
-C %page
+C page
 C WALK- Move in specified direction
 C
 C Declarations
@@ -280,7 +280,7 @@ C Functions and data
 C
 C	QOPEN(O)=(OFLAG2(O).AND.OPENBT).NE.0
 	QOPEN(O)=AND(OFLAG2(O),OPENBT).NE.0
-C %page
+C page
 C WALK, PAGE 2
 C
 	WALK=.TRUE.				! assume wins.

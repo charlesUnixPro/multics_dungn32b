@@ -50,7 +50,7 @@ C	OFLAG1(LAMP)=OFLAG1(LAMP).OR.VISIBT	! visible
 	DO 100 I=1,CLNT				! disable cevnts if needed.
 	  IF(CCNCEL(I)) CFLAG(I)=.FALSE.
 100	CONTINUE
-C %page
+C page
 C JIGSUP, PAGE 2
 C
 C Now redistribute his valuables and other belongings.
@@ -99,7 +99,7 @@ C
 	CALL EXIT
 C
 	END
-C %page
+C page
 C OACTOR-	Get actor associated with object
 C
 C Declarations
@@ -115,7 +115,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C PROB-		Compute probability
 C
 C Declarations
@@ -130,7 +130,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C RMDESC-- Print room description
 C
 C RMDESC prints a description of the current room.
@@ -195,7 +195,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C PRINCR- Print contents of room
 C
 C Declarations
@@ -261,7 +261,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C INVENT- Print contents of adventurer
 C
 C Declarations

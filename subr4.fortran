@@ -51,7 +51,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C ORPHAN- Set up orphans for parser
 C
 C Declarations
@@ -72,7 +72,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C YESNO- Obtain yes/no answer
 C
 C Called by-
@@ -101,7 +101,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C ROBADV-- Steal winner's valuables
 C
 C Declarations
@@ -122,7 +122,7 @@ C	&	((OFLAG2(I).AND.SCRDBT).NE.0)) GO TO 100
 	RETURN
 C
 	END
-C %page
+C page
 C ROBRM-- Steal room valuables
 C
 C Declarations
@@ -154,7 +154,7 @@ C 	&	ROBRM=ROBRM+ROBADV(OACTOR(I),NR,NC,NA)
 	RETURN
 C
 	END
-C %page
+C page
 C WINNIN-- See if villain is winning
 C
 C Declarations

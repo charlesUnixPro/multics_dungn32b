@@ -14,7 +14,7 @@ C
 	&	((R.EQ.INMIR).AND.(MLOC.EQ.MRG))
 	RETURN
 	END
-C %page
+C page
 C AAPPLI- Applicables for adventurers
 C
 C Declarations
@@ -33,7 +33,7 @@ C Common false return.
 C
 10	AAPPLI=.FALSE.
 	RETURN
-C %page
+C page
 C AAPPLI, PAGE 2
 C
 C A1--	Dead player.
@@ -110,7 +110,7 @@ C
 1700	IF(PRSA.EQ.QUITW) GO TO 10		! if quit, don't handle
 	CALL RSPEAK(963)			! can't do it
 	RETURN
-C %page
+C page
 C
 C A2--	Robot.  Process most commands given to robot.
 C
@@ -145,7 +145,7 @@ C
 C
 2500	CALL RSPEAK(930)			! buzz, whirr, click!
 	GO TO 10				! don't handle here.
-C %page
+C page
 C AAPPLI, PAGE 3
 C
 C A3--	Master.  Process most commands given to master.
@@ -178,7 +178,7 @@ C
 	GO TO 10
 C
 	END
-C %page
+C page
 C THIEFD-	Intermove thief demon
 C
 C Declarations
@@ -193,7 +193,7 @@ C
 C Functions AND DATA
 C
 	QSTILL(R)=(QHERE(STILL,R).OR.(OADV(STILL).EQ.-THIEF))
-C %page
+C page
 C THIEFD, PAGE 2
 C
 C	DFLAG=(PRSFLG.AND.64).NE.0		! set up detail flag.
@@ -224,7 +224,7 @@ C	&	OFLAG1(I)=OFLAG1(I).OR.VISIBT	! make objects visible
 C	IF(QHERE(EGG,THFPOS)) OFLAG2(EGG)=OFLAG2(EGG).OR.OPENBT
 	IF(QHERE(EGG,THFPOS)) OFLAG2(EGG)=OR(OFLAG2(EGG),OPENBT)
 	GO TO 1700
-C %page
+C page
 C THIEFD, PAGE 3
 C
 C Thief and (live) winner in same room.
@@ -272,7 +272,7 @@ C
 	&	CALL RSPEAK(915)		! leave player in dark?
 	RHERE=0
 	GO TO 1700				! onward.
-C %page
+C page
 C THIEFD, PAGE 4
 C
 C Not in adventurers room, or adventurer dead, or room lit.
@@ -328,7 +328,7 @@ C	  OFLAG2(I)=OFLAG2(I).OR.TCHBT
 	&	CALL RSPSUB(RMK,ODESC2(I))	! vanishes before you.
 	  GO TO 1700
 1550	CONTINUE
-C %page
+C page
 C THIEFD, PAGE 5
 C
 C Now move to new room.

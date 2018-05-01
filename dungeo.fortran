@@ -15,7 +15,7 @@ C
 	IMPLICIT INTEGER (A-Z)
 	LOGICAL INITFL
 	%include dparam
-C %page
+C page
 C DUNGEON, PAGE 2
 C
 C 1) Initialize data structures
@@ -68,7 +68,7 @@ C
 	INPCH=5					! tty input
 	OUTCH=6					! tty output.
 	DBCH=2					! data base.
-C %page
+C page
 C DUNGEON, PAGE 3
 C
 C Init all arrays.
@@ -114,7 +114,7 @@ C
 	  VBEST(I)=0
 	  VMELEE(I)=0
 700	CONTINUE
-C %page
+C page
 C DUNGEON, PAGE 4
 C
 	DO 800 I=1,OMAX				! clear object arrays.
@@ -196,7 +196,7 @@ C
 C
 	DATA XELNT/1,2,3,3/
 	END
-C %page
+C page
 C TXCRYP - Subroutine to encrypt/decrypt text strings.
 C
 C This subroutine performs a reversible encryption on a text string.

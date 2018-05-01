@@ -12,4 +12,16 @@ changed to AND(), OR(), XOR() and COMPL().
 In game$initfl, the calculation of SHOUR and SMIN was just broken, and
 was recoded to work correctly, fixing GTTIME().
 
+Multics FORTRAN does not allow mixing CHARACTER and non-CHARACTER in a common 
+block: Moved ONAME to /PRSSTC/, PVOC, DVOC, AVOC, OVOC, VVOC to /VOCAB1/,
+INBUF, SUBBUF to /INPUTC/, VEDIT to /MISC1/.
+
+Redefined RECLNT to 20 (words).
+
+Renamed PROGRAM DUNGEO to DUNGEON.
+
+Moved all COMMON DATA specications to BLOCK DATA FOO.
+
+Convert from DOS lines (cr/lf) to UNIX (cr).
+
 

@@ -49,7 +49,7 @@ C	DRKBLE(R)=(OFLAG1(R).AND.DRNKBT).NE.0
 	DATA ANSSTR/'TEMPLE','FOREST','30003','30,003','FLASK','RUB',
 	&	'FONDLE','CARESS','FEEL','TOUCH','BONES','BODY',
 	&	'SKELETON','RUSTY KNIFE','NONE','NOWHERE'/
-C %page
+C page
 C VAPPLI, PAGE 2
 C
 	VAPPLI=.TRUE.				! assume wins.
@@ -102,7 +102,7 @@ C Here to test for change in light.
 C
 50	IF(WASLIT.AND..NOT.LIT(HERE)) CALL RSPEAK(406)
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 3
 C
 C V100--	Read
@@ -145,7 +145,7 @@ C V103--	Deflate.
 C
 3000	IF(.NOT.OBJACT(X)) CALL RSPEAK(369)	! obj handle?
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 4
 C
 C V104--	Alarm
@@ -193,7 +193,7 @@ C V112--	Push
 C
 12000	IF(.NOT.OBJACT(X)) CALL RSPSB2(382,ODO2,RMK)
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 5
 C
 C V113--	Untie
@@ -251,7 +251,7 @@ C
 17000	PRSA=INFLAW
 	PRSI=LUNGS
 	GO TO 2000				! handle like inflate.
-C %page
+C page
 C VAPPLI, PAGE 5A.
 C
 C V118--	Knock
@@ -322,7 +322,7 @@ C
 	  IF(I.EQ.WATER) CALL NEWSTA(I,133,0,0,0)	! but water disappears.
 21500	CONTINUE
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 6
 C
 C V122--	Move
@@ -427,7 +427,7 @@ C 26200	OFLAG2(PRSO)=OFLAG2(PRSO).AND. .NOT.OPENBT
 26200	OFLAG2(PRSO)=AND(OFLAG2(PRSO), COMPL(OPENBT))
 	CALL RSPEAK(414)			! done.
 	GO TO 50				! go see if now dark.
-C %page
+C page
 C VAPPLI, PAGE 7
 C
 C V127--	Find
@@ -530,7 +530,7 @@ C V133--	Inventory
 C
 33000	CALL INVENT(WINNER)
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 8
 C
 C V134--	Fill
@@ -617,7 +617,7 @@ C
 C
 37600	CALL RSPSUB(301,ODI2)			! cant burn it with that.
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 9
 C
 C V138--	Mung
@@ -674,7 +674,7 @@ C
 41400	J=472					! not a weapon.
 41500	CALL RSPSB2(I,ODO2,J)			! joke.
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 10
 C
 C V142--	Walk
@@ -746,7 +746,7 @@ C
 	PRSWON=.FALSE.				! disable rest of move.
 	PRSCON=0
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 11
 C
 C V151--	Hello
@@ -809,7 +809,7 @@ C
 C
 52800	CALL RSPSUB(629,ODO2)			! empty.
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 12
 C
 C V153--	Look under
@@ -856,7 +856,7 @@ C
 58500	PRSA=WALKW				! walk
 	PRSO=I					! in specified dir.
 	GO TO 42000				! treat as walk.
-C %page
+C page
 C VAPPLI, PAGE 13
 C
 C V160--	Pour on
@@ -908,7 +908,7 @@ C
 C
 62100	PRSA=UNTIEW				! treat as normal untie.
 	GO TO 13000
-C %page
+C page
 C VAPPLI, PAGE 14
 C
 C V163--	Make
@@ -964,7 +964,7 @@ C	IF((OFLAG2(PRSO).AND.VILLBT).NE.0) I=941 ! why do it?
 	IF(AND(OFLAG2(PRSO),VILLBT).NE.0) I=941 ! why do it?
 	CALL RSPSUB(I,ODO2)
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 15
 C
 C V167--	Enter
@@ -1008,7 +1008,7 @@ C V69--	Smell
 C
 69001	CALL RSPSUB(903,ODO2)			! joke.
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 16
 C
 C V70--	Brief
@@ -1125,7 +1125,7 @@ C
 84000	CALL SCORE(.TRUE.)			! tell score.
 	IF(.NOT.YESNO(343,10,0)) RETURN		! ask for y/n decision.
 	CALL EXIT				! bye.
-C %page
+C page
 C VAPPLI, PAGE 17
 C
 C V85--	Follow (used in endgame)
@@ -1211,7 +1211,7 @@ C
 C
 88300	CALL JIGSUP(365)			! yes, dead!!!!!
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 18
 C
 C V89--	Dig
@@ -1271,7 +1271,7 @@ C
 C
 91500	CALL JIGSUP(449+RND(4))			! fatal leap.
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 19
 C
 C V92--	Lock
@@ -1315,7 +1315,7 @@ C
 	CALL RSPEAK(478+K)			! how much more?
 	IF(DEATHS.NE.0) CALL RSPEAK(482+DEATHS)	! how many deaths?
 	RETURN
-C %page
+C page
 C VAPPLI, PAGE 20
 C
 C V95--	Incant
@@ -1375,7 +1375,7 @@ C
 C
 95900	CALL RSPEAK(1052)			! got it wrong.
 	GO TO 95375
-C %page
+C page
 C VAPPLI, PAGE 21
 C
 C V96--	Answer
@@ -1430,7 +1430,7 @@ C
 	RIDDLF=.TRUE.				! solved riddle.
 	CALL RSPEAK(338)
 	RETURN
-C %page
+C page
 C V97-- Count (valuables, possessions in VALUAC)
 C
 97000	IF(PRSO.NE.MATCH) GO TO 97100		! matches?
@@ -1452,7 +1452,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C TAKE-- Basic take sequence
 C
 C Take an object (for verbs take, put, drop, read, etc.)
@@ -1464,7 +1464,7 @@ C
 	IMPLICIT INTEGER (A-Z)
 	LOGICAL FLG,OBJACT,OAPPLI,QHERE
 	%include dparam
-C %page
+C page
 C TAKE, PAGE 2
 C
 C	IF((PRSO.LE.STRBIT).AND.
@@ -1518,7 +1518,7 @@ C	OFLAG2(PRSO)=OFLAG2(PRSO).OR.TCHBT	! has been touched.
 	RETURN
 C
 	END
-C %page
+C page
 C DROP- Drop verb processor (also throw, pour water)
 C
 C Declarations
@@ -1566,7 +1566,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C PUT- Put verb processor
 C
 C Declarations
@@ -1580,7 +1580,7 @@ C Functions and data
 C
 C	QOPEN(R)=(OFLAG2(R).AND.OPENBT).NE.0
 	QOPEN(R)=AND(OFLAG2(R),OPENBT).NE.0
-C %page
+C page
 C PUT, PAGE 2
 C
 C	IF((OFLAG2(PRSO).AND.NOCHBT).EQ.0) GO TO 100

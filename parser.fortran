@@ -40,7 +40,7 @@ C
 	PRSCON=1				! restart lex scan.
 	RETURN
 	END
-C %page
+C page
 C PARSE-	Top level parse routine
 C
 C Declarations
@@ -97,7 +97,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C LEX-	Lexical analyzer
 C
 C Declarations
@@ -189,7 +189,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C SPARSE-	Start of parse
 C
 C Declarations
@@ -204,7 +204,7 @@ C
 	LOGICAL LIT,DFLAG,VBFLAG,ANDFLG,BUNFLG
 	INTEGER OBJVEC(2),PRPVEC(2)
 	EQUIVALENCE (OBJVEC(1),OBJ1),(PRPVEC(1),PREP1)
-C %page
+C page
 C SPARSE, PAGE 7
 C
 C Set up for parsing
@@ -223,7 +223,7 @@ C
 	BUNFLG=.FALSE.
 C	DFLAG=(PRSFLG.AND.4).NE.0
 	DFLAG=AND(PRSFLG,4).NE.0
-C %page
+C page
 C SPARSE, PAGE 8
 C
 C Now loop over input buffer of lexical tokens.
@@ -291,7 +291,7 @@ C
 800	  TELFLG=.TRUE.				! something said.
 	  BUNSUB=0				! no valid EXCEPT clause.
 	  RETURN
-C %page
+C page
 C SPARSE, PAGE 9
 C
 1000	IF(I.LT.LLNT) GO TO 10			! end of do loop
@@ -335,7 +335,7 @@ C
 	IF(DFLAG) WRITE(OUTCH,1310) ACT,OBJ1,OBJ2,PREP1,PREP2
 1310	FORMAT(' SPARSE RESULTS- ',5I7)
 	RETURN
-C %page
+C page
 C SPARSE, PAGE 10
 C
 C 1500--	AND
@@ -452,7 +452,7 @@ C
 	ANDFLG=.FALSE.				! no pending 'AND'.
 	LOBJ=OBJ				! record last object.
 	GO TO 1000
-C %page
+C page
 C SPARSE, PAGE 11
 C
 C 7000--	Unidentifiable object (index into OVOC is J)
@@ -547,7 +547,7 @@ C
 	GO TO 800				! go clean up state.
 C
 	END
-C %page
+C page
 	BLOCK DATA BAR
 	IMPLICIT INTEGER(A-Z)
 	%include dparam
@@ -587,7 +587,7 @@ C
 	& XUP,XUP,XDOWN,XDOWN,
 	& XLAUN,XLAND,XEXIT,XEXIT,
 	& XCROSS,XENTER,XCROSS,0,0/
-C %page
+C page
 C SPARSE, PAGE 3
 C
 C Adjectives--	maps adjectives to object numbers
@@ -692,7 +692,7 @@ C
 	& 204,199,205,207,
 	& 207,23,253,-254,104,-148,
 	& 12*0/
-C %page
+C page
 C SPARSE, PAGE 4
 C
 C OBJECTS--	Maps objects to object indices,
@@ -905,7 +905,7 @@ C
 	& 151,263,42,42,
 	& 72,-73,37,-45,146,-147,211,
 	& 24*0/
-C %page
+C page
 C SPARSE, PAGE 5
 C
 C VERBS--	Maps verbs to syntax slots
@@ -951,7 +951,7 @@ C	  0	  1	 HAVE		adventurer must have object
 C	  1	  0	 TRY		try to take, dont care if fail
 C	  1	  1	 TAKE		try to take, care if fail
 C
-C %page
+C page
 C SPARSE, PAGE 6
 C
 	DATA (VWORD(I),I=1,43) /

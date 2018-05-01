@@ -18,7 +18,7 @@ C
 	%include dparam
 	LOGICAL RMDESC,VAPPLI,AAPPLI,OBJACT
 	LOGICAL F,PARSE,FINDXT,XVEHIC,LIT,PRVLIT
-C %page
+C page
 C GAME, PAGE 2
 C
 C Start up, describe current location.
@@ -61,7 +61,7 @@ C
 C
 900	CALL VALUAC(PRSO)			! collective object.
 	GO TO 350
-C %page
+C page
 C GAME, PAGE 3
 C
 C Special case-- Echo Room.
@@ -96,7 +96,7 @@ C
 1410	FORMAT(1X,A)
 	TELFLG=.TRUE.				! indicate output.
 	GO TO 1000				! more echo room.
-C %page
+C page
 C GAME, PAGE 4
 C
 C Special case-- TELL <ACTOR> "NEW COMMAND".
@@ -153,7 +153,7 @@ C
 	GO TO 2350
 C
 	END
-C %page
+C page
 C XENDMV-	Execute end of move functions.
 C
 C Declarations
@@ -171,7 +171,7 @@ C
 	IF(PRSWON) F=XVEHIC(2)			! vehicle readout.
 	RETURN
 	END
-C %page
+C page
 C XVEHIC- Execute vehicle function
 C
 C Declarations
@@ -186,7 +186,7 @@ C
 	IF(AV.NE.0) XVEHIC=OAPPLI(OACTIO(AV),N)
 	RETURN
 	END
-C %page
+C page
 C INITFL-- DUNGEON file initialization subroutine
 C
 C Declarations
@@ -196,7 +196,7 @@ C
 	%include dparam
 	LOGICAL PROTCT
 	CHARACTER*1 KEDIT
-C %page
+C page
 C INITFL, PAGE 2
 C
 C First check for protection violation.
@@ -251,7 +251,7 @@ C
 125	FORMAT(A)
 130	FORMAT(I8)
 135	FORMAT(L4)
-C %page
+C page
 C INITFL, PAGE 3
 C
 C The internal data base is now established.
@@ -307,7 +307,7 @@ C
 	& ' The darkness becomes all encompassing, and your vision fails.')
 C
 	END
-C %page
+C page
 C PROTCT-- Check for user violation
 C
 C This routine should be modified if you wish to add system

@@ -14,7 +14,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C VILSTR-	Compute villain strength
 C
 C Declarations
@@ -36,7 +36,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C GTTIME-- Get total time played
 C
 C Declarations
@@ -61,7 +61,7 @@ C	print, "t ", t
 	RETURN
 C
 	END
-C %page
+C page
 C OPNCLS-- Process open/close for doors
 C
 C Declarations
@@ -98,7 +98,7 @@ C
 	RETURN
 C
 	END
-C %page
+C page
 C LIT-- Is room lit?
 C
 C Declarations
