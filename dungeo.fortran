@@ -13,7 +13,7 @@ C
 C Declarations
 C
 	IMPLICIT INTEGER (A-Z)
-	LOGICAL GAME$INITFL
+	LOGICAL INITFL
 	%include dparam
 C %page
 C DUNGEON, PAGE 2
@@ -165,7 +165,7 @@ C
 	SCOLRM=0
 	SCOLAC=0
 C
-	IF(GAME$INITFL(X)) CALL GAME			! if init files, play game.
+	IF(INITFL(X)) CALL GAME			! if init files, play game.
 	CALL EXIT				! done
 	END
 	BLOCK DATA FOO
