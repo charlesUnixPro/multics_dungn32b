@@ -33,19 +33,19 @@ C
 	AACTIO(PLAYER)=PLAYER			! turn on dead player func.
 C
 	DO 50 J=1,OLNT				! turn off fighting.
-Cold	  IF(QHERE(J,HERE)) OFLAG2(J)=OFLAG2(J).AND. .NOT.FITEBT
+C old	  IF(QHERE(J,HERE)) OFLAG2(J)=OFLAG2(J).AND. .NOT.FITEBT
 	  IF(QHERE(J,HERE)) OFLAG2(J)=AND(OFLAG2(J), COMPL(FITEBT))
 50	CONTINUE
 C
 	F=MOVETO(LLD1,WINNER)			! reposition him.
 	EGYPTF=.TRUE.				! restore coffin.
 	IF(OADV(COFFI).EQ.WINNER) CALL NEWSTA(COFFI,0,EGYPT,0,0)
-Cold	OFLAG2(DOOR)=OFLAG2(DOOR).AND. .NOT.TCHBT ! restore door.
+C old	OFLAG2(DOOR)=OFLAG2(DOOR).AND. .NOT.TCHBT ! restore door.
 	OFLAG2(DOOR)=AND(OFLAG2(DOOR), COMPL(TCHBT)) ! restore door.
-Cold	OFLAG1(ROBOT)=(OFLAG1(ROBOT).OR.VISIBT) .AND. .NOT.NDSCBT
+C old	OFLAG1(ROBOT)=(OFLAG1(ROBOT).OR.VISIBT) .AND. .NOT.NDSCBT
 	OFLAG1(ROBOT)=AND(OR(OFLAG1(ROBOT),VISIBT), COMPL(NDSCBT))
 	CALL NEWSTA(LAMP,0,LROOM,0,0)		! lamp to living room,
-Cold	OFLAG1(LAMP)=OFLAG1(LAMP).OR.VISIBT	! visible
+C old	OFLAG1(LAMP)=OFLAG1(LAMP).OR.VISIBT	! visible
 	OFLAG1(LAMP)=OR(OFLAG1(LAMP),VISIBT)	! visible
 	DO 100 I=1,CLNT				! disable cevnts if needed.
 	  IF(CCNCEL(I)) CFLAG(I)=.FALSE.
@@ -75,7 +75,7 @@ C
 	  IF((OADV(J).NE.WINNER).OR.(OTVAL(J).EQ.0))
 	&	GO TO 300			! on adv and valuable?
 250	  I=I+1					! find next room.
-Cold	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 250	! skip if nono.
+C old	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 250	! skip if nono.
 	  IF((AND(RFLAG(I),NONOFL)).NE.0) GO TO 250	! skip if nono.
 	  CALL NEWSTA(J,0,I,0,0)		! yes, move.
 300	CONTINUE
@@ -83,7 +83,7 @@ C
 	DO 500 J=1,OLNT				! now get rid of remainder.
 	  IF(OADV(J).NE.WINNER) GO TO 500
 450	  I=I+1					! find next room.
-Cold	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 450	! skip if nono.
+C old	  IF((RFLAG(I).AND.NONOFL).NE.0) GO TO 450	! skip if nono.
 	  IF((AND(RFLAG(I),NONOFL)).NE.0) GO TO 450	! skip if nono.
 	  CALL NEWSTA(J,0,I,0,0)
 500	CONTINUE
@@ -164,9 +164,9 @@ C
 	RETURN
 C
 300	I=RDESC2-HERE				! assume short desc.
-Cold	IF((FULL.EQ.0)
-Cold	&	.AND. (SUPERF.OR.(((RFLAG(HERE).AND.RSEEN).NE.0)
-Cold	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
+C old	IF((FULL.EQ.0)
+C old	&	.AND. (SUPERF.OR.(((RFLAG(HERE).AND.RSEEN).NE.0)
+C old	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
 	IF((FULL.EQ.0)
 	&	.AND. (SUPERF.OR.(((AND(RFLAG(HERE),RSEEN)).NE.0)
 	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
@@ -180,7 +180,7 @@ Cold	&	.AND. (BRIEFF.OR.PROB(80,80))))) GO TO 400
 C
 400	CALL RSPEAK(I)				! output description.
 500	IF(AVEHIC(WINNER).NE.0) CALL RSPSUB(431,ODESC2(AVEHIC(WINNER)))
-Cold	RFLAG(HERE)=RFLAG(HERE).OR.RSEEN	! indicate room seen.
+C old	RFLAG(HERE)=RFLAG(HERE).OR.RSEEN	! indicate room seen.
 	RFLAG(HERE)=OR(RFLAG(HERE),RSEEN)	! indicate room seen.
 C
 600	IF(LIT(HERE)) GO TO 700			! if lit, do objects
@@ -207,21 +207,21 @@ C
 C
 	J=329					! assume superbrief format.
 	DO 500 I=1,OLNT				! loop on objects
-Cold	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
-Cold	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)).OR.
-Cold	&	(I.EQ.AVEHIC(WINNER))) GO TO 500
+C old	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
+C old	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)).OR.
+C old	&	(I.EQ.AVEHIC(WINNER))) GO TO 500
 	  IF(.NOT.QHERE(I,RM).OR.((AND(OFLAG1(I),VISIBT)).EQ.0).OR.
 	&	(((AND(OFLAG1(I),NDSCBT)).NE.0).AND.(FULL.NE.1)).OR.
 	&	(I.EQ.AVEHIC(WINNER))) GO TO 500
-Cold	  IF((FULL.EQ.0).AND.(SUPERF.OR.(BRIEFF.AND.
-Cold	&	((RFLAG(HERE).AND.RSEEN).NE.0)))) GO TO 200
+C old	  IF((FULL.EQ.0).AND.(SUPERF.OR.(BRIEFF.AND.
+C old	&	((RFLAG(HERE).AND.RSEEN).NE.0)))) GO TO 200
 	  IF((FULL.EQ.0).AND.(SUPERF.OR.(BRIEFF.AND.
 	&	((AND(RFLAG(HERE),RSEEN)).NE.0)))) GO TO 200
 C
 C Do long description of object.
 C
 	  K=ODESCO(I)				! get untouched.
-Cold	  IF((K.EQ.0).OR.((OFLAG2(I).AND.TCHBT).NE.0)) K=ODESC1(I)
+C old	  IF((K.EQ.0).OR.((OFLAG2(I).AND.TCHBT).NE.0)) K=ODESC1(I)
 	  IF((K.EQ.0).OR.((AND(OFLAG2(I),TCHBT)).NE.0)) K=ODESC1(I)
 	  IF((K.EQ.0).AND.(FULL.EQ.1)) CALL RSPSUB(936,ODESC2(I))
 	  CALL RSPEAK(K)			! describe.
@@ -237,16 +237,16 @@ C
 C Now loop to print contents of objects in room.
 C
 	DO 1000 I=1,OLNT			! loop on objects.
-Cold	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
-Cold	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)))
-Cold	&	GO TO 1000
+C old	  IF(.NOT.QHERE(I,RM).OR.((OFLAG1(I).AND.VISIBT).EQ.0).OR.
+C old	&	(((OFLAG1(I).AND.NDSCBT).NE.0).AND.(FULL.NE.1)))
+C old	&	GO TO 1000
 	  IF(.NOT.QHERE(I,RM).OR.((AND(OFLAG1(I),VISIBT)).EQ.0).OR.
 	&	(((AND(OFLAG1(I),NDSCBT)).NE.0).AND.(FULL.NE.1)))
 	&	GO TO 1000
-Cold	  IF((OFLAG2(I).AND.ACTRBT).NE.0) CALL INVENT(OACTOR(I))
+C old	  IF((OFLAG2(I).AND.ACTRBT).NE.0) CALL INVENT(OACTOR(I))
 	  IF((AND(OFLAG2(I),ACTRBT)).NE.0) CALL INVENT(OACTOR(I))
-Cold	  IF((((OFLAG1(I).AND.TRANBT).EQ.0).AND.((OFLAG2(I).AND.OPENBT)
-Cold	&	.EQ.0)).OR.QEMPTY(I)) GO TO 1000
+C old	  IF((((OFLAG1(I).AND.TRANBT).EQ.0).AND.((OFLAG2(I).AND.OPENBT)
+C old	&	.EQ.0)).OR.QEMPTY(I)) GO TO 1000
 	  IF((((AND(OFLAG1(I),TRANBT)).EQ.0).AND.((AND(OFLAG2(I),OPENBT))
 	&	.EQ.0)).OR.QEMPTY(I)) GO TO 1000
 C
@@ -274,8 +274,8 @@ C
 	I=575					! first line.
 	IF(ADV.NE.PLAYER) I=576			! if not me.
 	DO 10 J=1,OLNT				! loop
-Cold	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0))
-Cold	&	GO TO 10
+C old	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0))
+C old	&	GO TO 10
 	  IF((OADV(J).NE.ADV).OR.((AND(OFLAG1(J),VISIBT)).EQ.0))
 	&	GO TO 10
 	  CALL RSPSUB(I,ODESC2(AOBJ(ADV)))
@@ -288,9 +288,9 @@ C
 	RETURN
 C
 25	DO 100 J=1,OLNT				! loop.
-Cold	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0).OR.
-Cold	&	(((OFLAG1(J).AND.TRANBT).EQ.0).AND.
-Cold	&	((OFLAG2(J).AND.OPENBT).EQ.0))) GO TO 100
+C old	  IF((OADV(J).NE.ADV).OR.((OFLAG1(J).AND.VISIBT).EQ.0).OR.
+C old	&	(((OFLAG1(J).AND.TRANBT).EQ.0).AND.
+C old	&	((OFLAG2(J).AND.OPENBT).EQ.0))) GO TO 100
 	  IF((OADV(J).NE.ADV).OR.((AND(OFLAG1(J),VISIBT)).EQ.0).OR.
 	&	(((AND(OFLAG1(J),TRANBT)).EQ.0).AND.
 	&	((AND(OFLAG2(J),OPENBT)).EQ.0))) GO TO 100

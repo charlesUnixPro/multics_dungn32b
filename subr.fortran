@@ -65,7 +65,7 @@ C
 	IF(X.EQ.0) RETURN			! anything to do?
 	TELFLG=.TRUE.				! said something.
 C
-Cold	READ(DBCH,REC=X) OLDREC,B1		! read first line.
+C old	READ(DBCH,REC=X) OLDREC,B1		! read first line.
 	call dtext_$read (x, oldrec, b1)	! read first line.
 100	CALL TXCRYP(X,B1)			! decrypt line.
 C
@@ -76,7 +76,7 @@ C
 400	WRITE(OUTCH,650) B1(1:MAX0(1,NBLEN(B1)))! output line.
 650	FORMAT(1X,A)
 	X=X+1					! on to next record.
-Cold	READ(DBCH,REC=X) NEWREC,B1		! read next record.
+C old	READ(DBCH,REC=X) NEWREC,B1		! read next record.
 	call dtext_$read (x, newrec, b1)	! read next record.
 	IF(OLDREC.EQ.NEWREC) GO TO 100		! continuation?
 	RETURN					! no, exit.
@@ -97,7 +97,7 @@ c is very short.
 C
 1000	B2(1:(TEXLNT-I))=B1(I+1:TEXLNT)		! copy rest of B1.
 C
-Cold	READ(DBCH,REC=Y) J,B1(I:TEXLNT)		! read sub record.
+C old	READ(DBCH,REC=Y) J,B1(I:TEXLNT)		! read sub record.
 	call dtext_$read (y, j, B1(I:TEXLNT))		! read sub record.
 	CALL TXCRYP(Y,B1(I:TEXLNT))		! decrypt sub record.
 	J=NBLEN(B1)				! backscan for blanks.

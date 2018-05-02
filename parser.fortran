@@ -56,7 +56,7 @@ C
 	SAVE BAKBUF,BAKLEN
 	DATA BAKBUF(1)/'L'/,BAKLEN/1/
 C
-Cold	DFLAG=(PRSFLG.AND.1).NE.0
+C old	DFLAG=(PRSFLG.AND.1).NE.0
 	DFLAG=AND(PRSFLG,1).NE.0
 	PARSE=.FALSE.				! assume fails.
 	PRSA=0					! zero outputs.
@@ -112,7 +112,7 @@ C
 	CHARACTER*1 J
 	LOGICAL DFLAG,VBFLAG
 C
-Cold	DFLAG=(PRSFLG.AND.2).NE.0
+C old	DFLAG=(PRSFLG.AND.2).NE.0
 	DFLAG=AND(PRSFLG,2).NE.0
 	LEX=.FALSE.				! assume lex fails.
 	OP=0					! output ptr.
@@ -221,7 +221,7 @@ C
 	LOBJ=0
 	ANDFLG=.FALSE.
 	BUNFLG=.FALSE.
-Cold	DFLAG=(PRSFLG.AND.4).NE.0
+C old	DFLAG=(PRSFLG.AND.4).NE.0
 	DFLAG=AND(PRSFLG,4).NE.0
 C page
 C SPARSE, PAGE 8
@@ -255,7 +255,7 @@ C
 C
 75	  IF((ADJ.NE.0).OR.(PREP.NE.0).OR.(OBJ1.NE.0)) GO TO 200
 	  IF(ACT.EQ.0) GO TO 80			! any verb yet?
-Cold	  IF((VVOC(ACT+1).AND.SVMASK).NE.WALKW) GO TO 200	! walk?
+C old	  IF((VVOC(ACT+1).AND.SVMASK).NE.WALKW) GO TO 200	! walk?
 	  IF(AND(VVOC(ACT+1),SVMASK).NE.WALKW) GO TO 200	! walk?
 80	  DO 100 J=1,DWMAX			! then chk for dir.
 	    IF(WORD.EQ.DWORD(J)) GO TO 3000	! match to direction?
@@ -307,11 +307,11 @@ C
 	IF(BUNFLG) OBJ1=BUNOBJ			! bunched object?
 	IF(BUNFLG.AND.(BUNSUB.NE.0).AND.(BUNLNT.EQ.0))
 	&	GO TO 13200			! except for nothing?
-Cold	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no action, take orphan.
+C old	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no action, take orphan.
 	IF(ACT.EQ.0) ACT=AND(OFLAG,OACT)		! if no action, take orphan.
 	IF(ACT.EQ.0) GO TO 10000		! no action, punt.
-Cold	IF(((VVOC(ACT+1).AND.SVMASK).NE.WALKW).OR.(OBJ1.LT.XMIN))
-Cold	&	GO TO 1100			! simple direction?
+C old	IF(((VVOC(ACT+1).AND.SVMASK).NE.WALKW).OR.(OBJ1.LT.XMIN))
+C old	&	GO TO 1100			! simple direction?
 	IF((AND(VVOC(ACT+1),SVMASK).NE.WALKW).OR.(OBJ1.LT.XMIN))
 	&	GO TO 1100			! simple direction?
 	IF ((OBJ2.NE.0).OR.(PREP1.NE.0).OR.(PREP2.NE.0))
@@ -383,7 +383,7 @@ C
 3000	OBJ=DVOC(J)				! save direction.
 	ACT=1					! find value for action.
 3600	IF(VVOC(ACT).EQ.0) CALL BUG(310,ACT)	! can't find walk.
-Cold	IF((VVOC(ACT+1).AND.SVMASK).EQ.WALKW) GO TO 6300 ! treat as obj.
+C old	IF((VVOC(ACT+1).AND.SVMASK).EQ.WALKW) GO TO 6300 ! treat as obj.
 	IF(AND(VVOC(ACT+1),SVMASK).EQ.WALKW) GO TO 6300 ! treat as obj.
 	ACT=ACT+VVOC(ACT)+1			! to next syntax entry.
 	GO TO 3600
@@ -421,7 +421,7 @@ C
 6010	FORMAT(' SPARSE- OBJ AT ',I6,'  OBJ= ',I6)
 	IF(OBJ.LE.0) GO TO 7000			! if le, couldnt.
 	IF(OBJ.NE.ITOBJ) GO TO 6100		! "it"?
-Cold	IF((OFLAG.AND.OOBJ1).NE.0) LASTIT=OFLAG.AND.OOBJ1	! orphan?
+C old	IF((OFLAG.AND.OOBJ1).NE.0) LASTIT=OFLAG.AND.OOBJ1	! orphan?
 	IF(AND(OFLAG,OOBJ1).NE.0) LASTIT=AND(OFLAG,OOBJ1)	! orphan?
 	OBJ=GETOBJ(0,0,LASTIT)			! find it.
 	IF(OBJ.LE.0) GO TO 7500			! if le, couldnt.
@@ -475,7 +475,7 @@ C
 	IF(VBFLAG) CALL RSPSUB(620,ODESC2(AVEHIC(WINNER)))
 	GO TO 800				! go clean up state.
 C
-Cold 7300	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no act, get orphan.
+C old 7300	IF(ACT.EQ.0) ACT=OFLAG.AND.OACT		! if no act, get orphan.
 7300	IF(ACT.EQ.0) ACT=AND(OFLAG,OACT)		! if no act, get orphan.
 	CALL ORPHAN(-1,ACT,PREP1,OBJ1,PREP,WORD,0,0)	! orphan the world.
 	IF(VBFLAG) WRITE(OUTCH,7310)

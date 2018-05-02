@@ -73,7 +73,7 @@ C
 C
 	CALL RSPEAK(571)			! kill the echo.
 	ECHOF=.TRUE.
-Cold	OFLAG2(BAR)=OFLAG2(BAR).AND. .NOT.SCRDBT ! let thief steal bar.
+C old	OFLAG2(BAR)=OFLAG2(BAR).AND. .NOT.SCRDBT ! let thief steal bar.
 	OFLAG2(BAR)=AND (OFLAG2(BAR), COMPL(SCRDBT)) ! let thief steal bar.
 	PRSWON=.TRUE.				! fake out parser.
 	PRSCON=1				! force new input.
@@ -113,10 +113,10 @@ C
 	GO TO 2150
 C
 2100	IF(OBJACT(X)) GO TO 350			! object handle?
-Cold	IF((OFLAG2(PRSO).AND.ACTRBT).NE.0) GO TO 2200 ! actor?
+C old	IF((OFLAG2(PRSO).AND.ACTRBT).NE.0) GO TO 2200 ! actor?
 	IF(AND (OFLAG2(PRSO),ACTRBT).NE.0) GO TO 2200 ! actor?
 	I=602
-Cold	IF((OFLAG1(PRSO).AND.VICTBT).NE.0) I=888
+C old	IF((OFLAG1(PRSO).AND.VICTBT).NE.0) I=888
 	IF(AND (OFLAG1(PRSO),VICTBT).NE.0) I=888
 	CALL RSPSUB(I,ODESC2(PRSO))		! no, joke.
 2150	PRSCON=0				! disable cmd stream.
@@ -219,8 +219,8 @@ C
 C
 C Now restore from existing index file.
 C
-Cold 10000	OPEN (UNIT=1,NAME='dindx',STATUS='OLD',
-Cold	&	FORM='FORMATTED',ACCESS='SEQUENTIAL',ERR=1900)
+C old 10000	OPEN (UNIT=1,NAME='dindx',STATUS='OLD',
+C old	&	FORM='FORMATTED',ACCESS='SEQUENTIAL',ERR=1900)
 10000	OPEN (UNIT=1,FILE='DINDX.DAT',STATUS='OLD',BLANK='NULL',
 	&	FORM='FORMATTED',ACCESS='SEQUENTIAL',ERR=1900)
 	READ(1,130) I,J				! get version.
@@ -228,9 +228,9 @@ Cold	&	FORM='FORMATTED',ACCESS='SEQUENTIAL',ERR=1900)
 	IF((I.NE.VMAJ).OR.(J.NE.VMIN))
 	&	GO TO 1925			! match to ours?
 C
-Cold	OPEN (UNIT=DBCH,NAME='dtext',STATUS='OLD',
-Cold	&	FORM='UNFORMATTED',ACCESS='DIRECT',
-Cold	&	RECL=RECLNT,ERR=1950)
+C old	OPEN (UNIT=DBCH,NAME='dtext',STATUS='OLD',
+C old	&	FORM='UNFORMATTED',ACCESS='DIRECT',
+C old	&	RECL=RECLNT,ERR=1950)
 	call dtext_$open
 C
 	READ(1,130) MXSCOR,STRBIT,EGMXSC
@@ -261,15 +261,15 @@ C
 C cac 2018-may-1. This code is just wrong. SHOUR and SMIN are 
 c "start hour" and "start minute" and are used in calculating play
 c time. 
-Cold 1025	CALL IDATE(SHOUR,SMIN,SSEC)		! get date (and toss).
-Cold	I=(SHOUR*64)+(SMIN*8)+SSEC		! first seed
-Cold	CALL ITIME(TMARRAY)			! get time.
-Cold	J=(TMARRAY(1)*64)+(TMARRAY(2)*8)+TMARRAY(3)	! second seed
+C old 1025	CALL IDATE(SHOUR,SMIN,SSEC)		! get date (and toss).
+C old	I=(SHOUR*64)+(SMIN*8)+SSEC		! first seed
+C old	CALL ITIME(TMARRAY)			! get time.
+C old	J=(TMARRAY(1)*64)+(TMARRAY(2)*8)+TMARRAY(3)	! second seed
 
 C New code
 1025	CONTINUe
 	CALL IDATE (CAC_Y, CAC_M, CAC_D)
-	I=(CAC_Y*64)+(CAC_M*8)+CAC_S		! first seed
+	I=(CAC_Y*64)+(CAC_M*8)+CAC_D		! first seed
 	CALL ITIME(TMARRAY)			! get time.
 	J=(TMARRAY(1)*64)+(TMARRAY(2)*8)+TMARRAY(3)	! second seed
 	SHOUR = TMARRAY(1)

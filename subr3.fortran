@@ -9,12 +9,12 @@ C
 C
 C Functions and data
 C
-Cold	QSEEIN(X)=((OFLAG1(X).AND.TRANBT).NE.0).OR.
-Cold	&	  ((OFLAG2(X).AND.OPENBT).NE.0)
+C old	QSEEIN(X)=((OFLAG1(X).AND.TRANBT).NE.0).OR.
+C old	&	  ((OFLAG2(X).AND.OPENBT).NE.0)
 	QSEEIN(X)=((AND(OFLAG1(X),TRANBT)).NE.0).OR.
 	&	  ((AND(OFLAG2(X),OPENBT)).NE.0)
-Cold	QUAL(X,Y)=((OFLAG1(X).AND.VISIBT).NE.0).AND.
-Cold	&	   (OCAN(X).EQ.Y).AND.(X.NE.AOBJ(WINNER))
+C old	QUAL(X,Y)=((OFLAG1(X).AND.VISIBT).NE.0).AND.
+C old	&	   (OCAN(X).EQ.Y).AND.(X.NE.AOBJ(WINNER))
 	QUAL(X,Y)=((AND(OFLAG1(X),VISIBT)).NE.0).AND.
 	&	   (OCAN(X).EQ.Y).AND.(X.NE.AOBJ(WINNER))
 C
@@ -23,8 +23,8 @@ C
 	IF(SUPERF.OR..NOT.LDESCF) GO TO 2000	! skip long descriptions?
 	DO 1000 I=1,OLNT			! loop thru objects.
 	  IF(.NOT.QUAL(I,OBJ)) GO TO 1000	! inside target?
-Cold	  IF((ODESCO(I).EQ.0).OR.
-Cold	&   ((OFLAG2(I).AND.TCHBT).NE.0)) GO TO 700
+C old	  IF((ODESCO(I).EQ.0).OR.
+C old	&   ((OFLAG2(I).AND.TCHBT).NE.0)) GO TO 700
 	  IF((ODESCO(I).EQ.0).OR.
 	&   ((AND(OFLAG2(I),TCHBT)).NE.0)) GO TO 700
 	  CALL RSPEAK(ODESCO(I))		! print untouched descr.
@@ -42,8 +42,8 @@ C
 2000	CALL RSPSUB(DESC+ALSO,ODESC2(OBJ))	! print header.
 	DO 3000 I=1,OLNT			! loop thru objects.
 	  IF(.NOT.QUAL(I,OBJ)) GO TO 3000	! inside target?
-Cold	  IF((ALSO.NE.0).AND.(ODESCO(I).NE.0).AND.
-Cold	&    ((OFLAG2(I).AND.TCHBT).EQ.0)) GO TO 3000
+C old	  IF((ALSO.NE.0).AND.(ODESCO(I).NE.0).AND.
+C old	&    ((OFLAG2(I).AND.TCHBT).EQ.0)) GO TO 3000
 	  IF((ALSO.NE.0).AND.(ODESCO(I).NE.0).AND.
 	&    ((AND(OFLAG2(I),TCHBT)).EQ.0)) GO TO 3000
 	  IF(.NOT.QSEEIN(I).OR.QEMPTY(I)) GO TO 2700
@@ -68,9 +68,9 @@ C
 	LOGICAL NLV,LHR,LNR
 C
 	MOVETO=.FALSE.				! assume fails.
-Cold	LHR=(RFLAG(HERE).AND.RLAND).NE.0	! land  here flag.
+C old	LHR=(RFLAG(HERE).AND.RLAND).NE.0	! land  here flag.
 	LHR=(AND(RFLAG(HERE),RLAND)).NE.0	! land  here flag.
-Cold	LNR=(RFLAG(NR).AND.RLAND).NE.0		! land there flag.
+C old	LNR=(RFLAG(NR).AND.RLAND).NE.0		! land there flag.
 	LNR=(AND(RFLAG(NR),RLAND)).NE.0		! land there flag.
 	J=AVEHIC(WHO)				! his vehicle
 C
@@ -83,14 +83,14 @@ C
 	IF(J.EQ.RBOAT) BITS=RWATER		! in boat?
 	IF(J.EQ.BALLO) BITS=RAIR		! in balloon?
 	IF(J.EQ.BUCKE) BITS=RBUCK		! in bucket?
-Cold	NLV=(RFLAG(NR).AND.BITS).EQ.0		! got wrong vehicle flag.
+C old	NLV=(RFLAG(NR).AND.BITS).EQ.0		! got wrong vehicle flag.
 	NLV=(AND(RFLAG(NR),BITS)).EQ.0		! got wrong vehicle flag.
 	IF((.NOT.LNR .AND.NLV) .OR.
 	&	(LNR.AND.LHR.AND.NLV.AND.(BITS.NE.RLAND)))
 	&	GO TO 800			! got wrong vehicle?
 C
 500	MOVETO=.TRUE.				! move should succeed.
-Cold	IF((RFLAG(NR).AND.RMUNG).EQ.0) GO TO 600 ! room munged?
+C old	IF((RFLAG(NR).AND.RMUNG).EQ.0) GO TO 600 ! room munged?
 	IF((AND(RFLAG(NR),RMUNG)).EQ.0) GO TO 600 ! room munged?
 	CALL RSPEAK(RDESC1(NR))			! yes, tell how.
 	RETURN
@@ -193,21 +193,21 @@ C
 	IF(XI.EQ.0) GO TO 1000			! no exits?
 C
 100	I=TRAVEL(XI)				! get entry.
-Cold	XROOM1=I.AND.XRMASK			! isolate room.
+C old	XROOM1=I.AND.XRMASK			! isolate room.
 	XROOM1=AND(I,XRMASK)			! isolate room.
-Cold	XTYPE=(((I.AND..NOT.XLFLAG)/XFSHFT).AND.XFMASK)+1
+C old	XTYPE=(((I.AND..NOT.XLFLAG)/XFSHFT).AND.XFMASK)+1
 	XTYPE=AND(((AND(I,COMPL(XLFLAG)))/XFSHFT),XFMASK)+1
 	GO TO (110,120,130,130),XTYPE		! branch on entry.
 	CALL BUG(10,XTYPE)
 C
-Cold 130	XOBJ=TRAVEL(XI+2).AND.XRMASK		! door/cexit- get obj/flag.
+C old 130	XOBJ=TRAVEL(XI+2).AND.XRMASK		! door/cexit- get obj/flag.
 130	XOBJ=AND(TRAVEL(XI+2),XRMASK)		! door/cexit- get obj/flag.
 	XACTIO=TRAVEL(XI+2)/XASHFT
 120	XSTRNG=TRAVEL(XI+1)			! door/cexit/nexit - string.
 110	XI=XI+XELNT(XTYPE)			! advance to next entry.
-Cold	IF((I.AND.XDMASK).EQ.DIR) RETURN	! match?
+C old	IF((I.AND.XDMASK).EQ.DIR) RETURN	! match?
 	IF(AND(I,XDMASK).EQ.DIR) RETURN	! match?
-Cold	IF((I.AND.XLFLAG).EQ.0) GO TO 100	! last entry?
+C old	IF((I.AND.XLFLAG).EQ.0) GO TO 100	! last entry?
 	IF(AND(I,XLFLAG).EQ.0) GO TO 100	! last entry?
 1000	FINDXT=.FALSE.				! yes, lose.
 	RETURN
