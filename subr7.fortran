@@ -22,7 +22,7 @@ C
 	REAL RAN
 	COMMON /SEED/ RNSEED
 
-C	RND = RAND(0)*FLOAT(N)
+Cold	RND = RAND(0)*FLOAT(N)
           call random_$uniform (RAN)
 	rnd = ran * float (n)
 	RETURN
@@ -35,7 +35,7 @@ C
 	IMPLICIT INTEGER (A-Z)
 	COMMON /SEED/ RNSEED
 
-C	CALL SRAND((ISHFT(HIGH,16)+LOW).OR.1)
+Cold	CALL SRAND((ISHFT(HIGH,16)+LOW).OR.1)
 	call random_$set_seed (INT(OR(HIGH*65536+LOW,1)))
 	RETURN
 

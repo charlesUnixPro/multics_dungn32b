@@ -45,7 +45,7 @@ C
 C
 C Functions and data
 C
-C	QOPEN(R)=(OFLAG2(R).AND.OPENBT).NE.0
+Cold	QOPEN(R)=(OFLAG2(R).AND.OPENBT).NE.0
 	QOPEN(R)=AND(OFLAG2(R),OPENBT).NE.0
 	QLEDGE(R)=(R.EQ.LEDG2).OR.(R.EQ.LEDG3).OR.(R.EQ.LEDG4)
 	DATA CNDTCK/50,20,10,5,0,156,156,156,157,0/
@@ -80,7 +80,7 @@ C
 	RVMNT=RVMNT+1				! raise water level.
 	IF(RVMNT.LE.16) RETURN			! if not full, exit.
 	CTICK(CEVMNT)=0				! full, disable clock.
-C	RFLAG(MAINT)=RFLAG(MAINT).OR.RMUNG	! mung room.
+Cold	RFLAG(MAINT)=RFLAG(MAINT).OR.RMUNG	! mung room.
 	RFLAG(MAINT)=OR(RFLAG(MAINT),RMUNG)	! mung room.
 	RDESC1(MAINT)=80			! say it is full of water.
 	IF(HERE.EQ.MAINT) CALL JIGSUP(81)	! drown him if present.
@@ -94,7 +94,7 @@ C
 C CEV4--	Match.  Out it goes.
 C
 4000	CALL RSPEAK(153)			! match is out.
-C	OFLAG1(MATCH)=OFLAG1(MATCH).AND. .NOT.(ONBT+FLAMBT+LITEBT)
+Cold	OFLAG1(MATCH)=OFLAG1(MATCH).AND. .NOT.(ONBT+FLAMBT+LITEBT)
 	OFLAG1(MATCH)=AND(OFLAG1(MATCH), COMPL((ONBT+FLAMBT+LITEBT)))
 	GO TO 50				! go see if now dark.
 C
@@ -218,8 +218,8 @@ C
 C CEV7--	Balloon burnup.
 C
 7000	DO 7100 I=1,OLNT			! find burning object
-C	  IF((RECEP.EQ.OCAN(I)).AND.((OFLAG1(I).AND.FLAMBT).NE.0))
-C	&	GO TO 7200			! in receptacle.
+Cold	  IF((RECEP.EQ.OCAN(I)).AND.((OFLAG1(I).AND.FLAMBT).NE.0))
+Cold	&	GO TO 7200			! in receptacle.
 	  IF((RECEP.EQ.OCAN(I)).AND.((AND(OFLAG1(I),FLAMBT)).NE.0))
 	&	GO TO 7200			! in receptacle.
 7100	CONTINUE
@@ -241,7 +241,7 @@ C
 	CALL NEWSTA(BRICK,0,0,0,0)		! kill brick.
 	IF(BR.NE.HERE) GO TO 8100		! brick elsewhere?
 C
-C	RFLAG(HERE)=RFLAG(HERE).OR.RMUNG	! blew self.
+Cold	RFLAG(HERE)=RFLAG(HERE).OR.RMUNG	! blew self.
 	RFLAG(HERE)=OR(RFLAG(HERE),RMUNG)	! blew self.
 	RDESC1(HERE)=114			! mung room.
 	CALL JIGSUP(150)			! dead.
@@ -254,14 +254,14 @@ C
 	IF(BR.NE.MSAFE) GO TO 8200		! blew safe room?
 	IF(BC.NE.SSLOT) RETURN			! was brick in safe?
 	CALL NEWSTA(SSLOT,0,0,0,0)		! kill slot.
-C	OFLAG2(SAFE)=OFLAG2(SAFE).OR.OPENBT	! open safe.
+Cold	OFLAG2(SAFE)=OFLAG2(SAFE).OR.OPENBT	! open safe.
 	OFLAG2(SAFE)=OR(OFLAG2(SAFE),OPENBT)	! open safe.
 	SAFEF=.TRUE.				! indicate safe blown.
 	RETURN
 C
 8200	DO 8250 I=1,OLNT			! blew wrong room.
-C	  IF(QHERE(I,BR) .AND. ((OFLAG1(I).AND.TAKEBT).NE.0))
-C	&	CALL NEWSTA(I,0,0,0,0)		! vanish contents.
+Cold	  IF(QHERE(I,BR) .AND. ((OFLAG1(I).AND.TAKEBT).NE.0))
+Cold	&	CALL NEWSTA(I,0,0,0,0)		! vanish contents.
 	  IF(QHERE(I,BR) .AND. ((AND(OFLAG1(I),TAKEBT)).NE.0))
 	&	CALL NEWSTA(I,0,0,0,0)		! vanish contents.
 8250	CONTINUE
@@ -280,7 +280,7 @@ C CEVAPP, PAGE 5
 C
 C CEV9--	Ledge munge.
 C
-C 9000	RFLAG(LEDG4)=RFLAG(LEDG4).OR.RMUNG	! ledge collapses.
+Cold 9000	RFLAG(LEDG4)=RFLAG(LEDG4).OR.RMUNG	! ledge collapses.
 9000	RFLAG(LEDG4)=OR(RFLAG(LEDG4),RMUNG)	! ledge collapses.
 	RDESC1(LEDG4)=109
 	IF(HERE.EQ.LEDG4) GO TO 9100		! was he there?
@@ -309,7 +309,7 @@ C
 C
 C CEV10--	Safe munge.
 C
-C 10000	RFLAG(MUNGRM)=RFLAG(MUNGRM).OR.RMUNG	! mung target.
+Cold 10000	RFLAG(MUNGRM)=RFLAG(MUNGRM).OR.RMUNG	! mung target.
 10000	RFLAG(MUNGRM)=OR(RFLAG(MUNGRM),RMUNG)	! mung target.
 	RDESC1(MUNGRM)=114
 	IF(HERE.EQ.MUNGRM) GO TO 10100		! is he present?
@@ -320,7 +320,7 @@ C 10000	RFLAG(MUNGRM)=RFLAG(MUNGRM).OR.RMUNG	! mung target.
 	RETURN
 C
 10100	I=116					! he's dead,
-C	IF((RFLAG(HERE).AND.RHOUSE).NE.0) I=117	! one way or another.
+Cold	IF((RFLAG(HERE).AND.RHOUSE).NE.0) I=117	! one way or another.
 	IF((AND(RFLAG(HERE),RHOUSE)).NE.0) I=117	! one way or another.
 	CALL JIGSUP(I)				! let him know.
 	RETURN
@@ -351,7 +351,7 @@ C
 C
 C CEV14--	Sphere.  If expires, he's trapped.
 C
-C 14000	RFLAG(CAGER)=RFLAG(CAGER).OR.RMUNG	! mung room.
+Cold 14000	RFLAG(CAGER)=RFLAG(CAGER).OR.RMUNG	! mung room.
 14000	RFLAG(CAGER)=OR(RFLAG(CAGER),RMUNG)	! mung room.
 	RDESC1(CAGER)=147
 	WINNER=PLAYER				! kill player, not robot.
@@ -414,14 +414,14 @@ C
 	CALL NEWSTA(LAMP,0,0,0,PLAYER)		! give him lamp.
 	CALL NEWSTA(SWORD,0,0,0,PLAYER)		! give him sword.
 C
-C	OFLAG1(LAMP)=(OFLAG1(LAMP).OR.LITEBT).AND. .NOT.ONBT
+Cold	OFLAG1(LAMP)=(OFLAG1(LAMP).OR.LITEBT).AND. .NOT.ONBT
 	OFLAG1(LAMP)=AND((OR(OFLAG1(LAMP),LITEBT)), COMPL(ONBT))
-C	OFLAG2(LAMP)=OFLAG2(LAMP).OR.TCHBT
+Cold	OFLAG2(LAMP)=OFLAG2(LAMP).OR.TCHBT
 	OFLAG2(LAMP)=OR(OFLAG2(LAMP),TCHBT)
 	CFLAG(CEVLNT)=.FALSE.			! lamp is good as new.
 	CTICK(CEVLNT)=350
 	ORLAMP=0
-C	OFLAG2(SWORD)=OFLAG2(SWORD).OR.TCHBT	! recreate sword.
+Cold	OFLAG2(SWORD)=OFLAG2(SWORD).OR.TCHBT	! recreate sword.
 	OFLAG2(SWORD)=OR(OFLAG2(SWORD),TCHBT)	! recreate sword.
 	SWDACT=.TRUE.
 	SWDSTA=0
@@ -549,7 +549,7 @@ C
 	CTR=CTR+1				! advance state cntr.
 	CTICK(CEV)=TICKS(CTR)			! reset interrupt.
 	IF(CTICK(CEV).NE.0) GO TO 100		! expired?
-C	OFLAG1(OBJ)=OFLAG1(OBJ).AND. .NOT.(LITEBT+FLAMBT+ONBT)
+Cold	OFLAG1(OBJ)=OFLAG1(OBJ).AND. .NOT.(LITEBT+FLAMBT+ONBT)
 	OFLAG1(OBJ)=AND(OFLAG1(OBJ), COMPL(LITEBT+FLAMBT+ONBT))
 	IF((OROOM(OBJ).EQ.HERE).OR.(OADV(OBJ).EQ.WINNER))
 	&	CALL RSPSUB(293,ODESC2(OBJ))
@@ -599,7 +599,7 @@ C
 2025	  VPROB(I)=VPROB(I)+10			! increase wakeup prob.
 	  GO TO 2400				! nothing else.
 C
-C 2050	  IF((OFLAG2(OBJ).AND.FITEBT).EQ.0) GO TO 2100
+Cold 2050	  IF((OFLAG2(OBJ).AND.FITEBT).EQ.0) GO TO 2100
 2050	  IF((AND(OFLAG2(OBJ),FITEBT)).EQ.0) GO TO 2100
 	  VOPPS(I)=OBJ				! fighting, set up opp.
 	  GO TO 2400
@@ -607,22 +607,22 @@ C
 2100	  IF(RA.EQ.0) GO TO 2400		! not fighting,
 	  PRSA=FRSTQW				! set up probability
 	  IF(.NOT.OAPPLI(RA,0)) GO TO 2400	! of fighting.
-C	  OFLAG2(OBJ)=OFLAG2(OBJ).OR.FITEBT
+Cold	  OFLAG2(OBJ)=OFLAG2(OBJ).OR.FITEBT
 	  OFLAG2(OBJ)=OR(OFLAG2(OBJ),FITEBT)
 	  VOPPS(I)=OBJ				! set up opp.
 	  PRSCON=0				! stop cmd stream.
 	  GO TO 2400
 C
-C 2200	  IF(((OFLAG2(OBJ).AND.FITEBT).EQ.0).OR.(RA.EQ.0))
-C	&	GO TO 2300			! nothing to do.
+Cold 2200	  IF(((OFLAG2(OBJ).AND.FITEBT).EQ.0).OR.(RA.EQ.0))
+Cold	&	GO TO 2300			! nothing to do.
 2200	  IF(((AND(OFLAG2(OBJ),FITEBT)).EQ.0).OR.(RA.EQ.0))
 	&	GO TO 2300			! nothing to do.
 	  PRSA=FIGHTW				! have a fight.
 	  F=OAPPLI(RA,0)
 2300	  IF(OBJ.EQ.THIEF) THFENF=.FALSE.	! turn off engrossed.
-C	  AFLAG(PLAYER)=AFLAG(PLAYER).AND. .NOT.ASTAG
+Cold	  AFLAG(PLAYER)=AFLAG(PLAYER).AND. .NOT.ASTAG
 	  AFLAG(PLAYER)=AND(AFLAG(PLAYER), COMPL(ASTAG))
-C	  OFLAG2(OBJ)=OFLAG2(OBJ).AND. .NOT.(STAGBT+FITEBT)
+Cold	  OFLAG2(OBJ)=OFLAG2(OBJ).AND. .NOT.(STAGBT+FITEBT)
 	  OFLAG2(OBJ)=AND(OFLAG2(OBJ), COMPL(STAGBT+FITEBT))
 	  IF((OCAPAC(OBJ).GE.0).OR.(RA.EQ.0))
 	&	GO TO 2400
@@ -697,12 +697,12 @@ C
 C Hero is attacker, villain is defender.
 C
 	PBLOSE=10				! bad lk prob.
-C	OFLAG2(V)=OFLAG2(V).OR.FITEBT		! yes, villain gets mad.
+Cold	OFLAG2(V)=OFLAG2(V).OR.FITEBT		! yes, villain gets mad.
 	OFLAG2(V)=OR(OFLAG2(V),FITEBT)	! yes, villain gets mad.
-C	IF((AFLAG(H).AND.ASTAG).EQ.0) GO TO 100	! hero stag?
+Cold	IF((AFLAG(H).AND.ASTAG).EQ.0) GO TO 100	! hero stag?
 	IF((AND(AFLAG(H),ASTAG)).EQ.0) GO TO 100	! hero stag?
 	CALL RSPEAK(591)			! yes, cant fight.
-C	AFLAG(H)=AFLAG(H).AND. .NOT.ASTAG
+Cold	AFLAG(H)=AFLAG(H).AND. .NOT.ASTAG
 	AFLAG(H)=AND(AFLAG(H), COMPL(ASTAG))
 	RETURN
 C
@@ -712,8 +712,8 @@ C
 	OD=DEF
 	DWEAP=0					! assume no weapon.
 	DO 200 I=1,OLNT				! search villain.
-C	  IF((OCAN(I).EQ.V).AND.((OFLAG2(I).AND.WEAPBT).NE.0))
-C	&	DWEAP=I
+Cold	  IF((OCAN(I).EQ.V).AND.((OFLAG2(I).AND.WEAPBT).NE.0))
+Cold	&	DWEAP=I
 	  IF((OCAN(I).EQ.V).AND.((AND(OFLAG2(I),WEAPBT)).NE.0))
 	&	DWEAP=I
 200	CONTINUE
@@ -729,11 +729,11 @@ C Villain is attacker, hero is defender.
 C
 1000	PRSCON=0				! stop cmd stream.
 	PBLOSE=50				! bad lk prob.
-C	AFLAG(H)=AFLAG(H).AND..NOT.ASTAG	! vill striking.
+Cold	AFLAG(H)=AFLAG(H).AND..NOT.ASTAG	! vill striking.
 	AFLAG(H)=AND(AFLAG(H),COMPL(ASTAG))	! vill striking.
-C	IF((OFLAG2(V).AND.STAGBT).EQ.0) GO TO 1200 ! vill staggered?
+Cold	IF((OFLAG2(V).AND.STAGBT).EQ.0) GO TO 1200 ! vill staggered?
 	IF((AND(OFLAG2(V),STAGBT)).EQ.0) GO TO 1200 ! vill staggered?
-C	OFLAG2(V)=OFLAG2(V).AND. .NOT.STAGBT	! make him ok.
+Cold	OFLAG2(V)=OFLAG2(V).AND. .NOT.STAGBT	! make him ok.
 	OFLAG2(V)=AND(OFLAG2(V), COMPL(STAGBT))	! make him ok.
 	CALL RSPSUB(594,DV)			! describe.
 	RETURN
@@ -809,11 +809,11 @@ C
 	GO TO 4000
 C
 3500	IF(HFLG) GO TO 3550			! staggered.
-C	AFLAG(H)=AFLAG(H).OR.ASTAG
+Cold	AFLAG(H)=AFLAG(H).OR.ASTAG
 	AFLAG(H)=OR(AFLAG(H),ASTAG)
 	GO TO 4000
 C
-C 3550	OFLAG2(V)=OFLAG2(V).OR.STAGBT
+Cold 3550	OFLAG2(V)=OFLAG2(V).OR.STAGBT
 3550	OFLAG2(V)=OR(OFLAG2(V),STAGBT)
 	GO TO 4000
 C
@@ -829,7 +829,7 @@ C
 	IF(.NOT.HFLG) GO TO 4500		! hero?
 	OCAPAC(V)=DEF				! store new capacity.
 	IF(DEF.NE.0) GO TO 4100			! dead?
-C	OFLAG2(V)=OFLAG2(V).AND. .NOT.FITEBT	! yes, not fighting.
+Cold	OFLAG2(V)=OFLAG2(V).AND. .NOT.FITEBT	! yes, not fighting.
 	OFLAG2(V)=AND(OFLAG2(V), COMPL(FITEBT))	! yes, not fighting.
 	CALL RSPSUB(572,DV)			! he dies.
 	CALL NEWSTA(V,0,0,0,0)			! make him disappear.

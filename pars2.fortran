@@ -9,7 +9,7 @@ C
 	%include dparam
 	LOGICAL THISIT,GHERE,LIT,CHOMP,DFLAG,NOADJS
 C
-C	DFLAG=(PRSFLG.AND.8).NE.0
+Cold	DFLAG=(PRSFLG.AND.8).NE.0
 	DFLAG=AND(PRSFLG,8).NE.0
 	CHOMP=.FALSE.
 	AV=AVEHIC(WINNER)
@@ -20,8 +20,8 @@ C
 	IF(DFLAG) WRITE(OUTCH,10) OBJ
 10	FORMAT(' SCHLST- ROOM SCH ',I6)
 	IF(OBJ) 1000,200,100			! test result.
-C 100	IF((AV.EQ.0).OR.(AV.EQ.OBJ).OR.(OCAN(OBJ).EQ.AV).OR.
-C	&	((OFLAG2(OBJ).AND.FINDBT).NE.0)) GO TO 200
+Cold 100	IF((AV.EQ.0).OR.(AV.EQ.OBJ).OR.(OCAN(OBJ).EQ.AV).OR.
+Cold	&	((OFLAG2(OBJ).AND.FINDBT).NE.0)) GO TO 200
 100	IF((AV.EQ.0).OR.(AV.EQ.OBJ).OR.(OCAN(OBJ).EQ.AV).OR.
 	&	(AND(OFLAG2(OBJ),FINDBT).NE.0)) GO TO 200
 	CHOMP=.TRUE.				! not reachable.
@@ -80,11 +80,11 @@ C
 C
 C Functions and data
 C
-C	NOTRAN(O)=((OFLAG1(O).AND.TRANBT).EQ.0).AND.
-C	&	((OFLAG2(O).AND.OPENBT).EQ.0)
+Cold	NOTRAN(O)=((OFLAG1(O).AND.TRANBT).EQ.0).AND.
+Cold	&	((OFLAG2(O).AND.OPENBT).EQ.0)
 	NOTRAN(O)=(AND(OFLAG1(O),TRANBT).EQ.0).AND.
 	&	(AND(OFLAG2(O),OPENBT).EQ.0)
-C	NOVIS(O)=((OFLAG1(O).AND.VISIBT).EQ.0)
+Cold	NOVIS(O)=((OFLAG1(O).AND.VISIBT).EQ.0)
 	NOVIS(O)=(AND(OFLAG1(O),VISIBT).EQ.0)
 C
 	SCHLST=0				! no result.
@@ -120,8 +120,8 @@ C
 	    X=OCAN(J)				! get container.
 300	    IF(X.EQ.I) GO TO 400		! inside target?
 	    IF(X.EQ.0) GO TO 500		! inside anything?
-C	    IF(NOVIS(X).OR.NOTRAN(X).OR.
-C	&	((OFLAG2(X).AND.SCHBT).EQ.0)) GO TO 500
+Cold	    IF(NOVIS(X).OR.NOTRAN(X).OR.
+Cold	&	((OFLAG2(X).AND.SCHBT).EQ.0)) GO TO 500
 	    IF(NOVIS(X).OR.NOTRAN(X).OR.
 	&	(AND(OFLAG2(X),SCHBT).EQ.0)) GO TO 500
 	    X=OCAN(X)				! go another level.
@@ -194,12 +194,12 @@ C page
 C SYNMCH, PAGE 2
 C
 	SYNMCH=.FALSE.
-C	DFLAG=(PRSFLG.AND.16).NE.0
+Cold	DFLAG=(PRSFLG.AND.16).NE.0
 	DFLAG=AND(PRSFLG,16).NE.0
 	J=ACT					! set up ptr to syntax.
 	DRIVE=0					! no default.
 	DFORCE=0				! no forced default.
-C	QPREP=OFLAG.AND.OPREP			! valid orphan prep flag.
+Cold	QPREP=OFLAG.AND.OPREP			! valid orphan prep flag.
 	QPREP=AND(OFLAG,OPREP)			! valid orphan prep flag.
 	LIMIT=J+VVOC(J)+1			! compute limit.
 	J=J+1					! advance to next.
@@ -207,7 +207,7 @@ C
 200	CALL UNPACK(J,NEWJ)			! unpack syntax.
 	IF(DFLAG) WRITE(OUTCH,210) J,OBJ1,PREP1,DOBJ,DFL1,DFL2
 210	FORMAT(' SYNMCH DOBJ INPUTS TO SYNEQL- ',6I7)
-C	SPREP=DOBJ.AND.VPMASK			! save expected prep.
+Cold	SPREP=DOBJ.AND.VPMASK			! save expected prep.
 	SPREP=AND(DOBJ,VPMASK)			! save expected prep.
 	IF(SYNEQL(PREP1,OBJ1,DOBJ,DFL1,DFL2)) GO TO 1000
 C
@@ -232,7 +232,7 @@ C Direct syntax match succeeded, try indirect.
 C
 1000	IF(DFLAG) WRITE(OUTCH,1010) J,OBJ2,PREP2,IOBJ,IFL1,IFL2
 1010	FORMAT(' SYNMCH IOBJ INPUTS TO SYNEQL- ',6I7)
-C	SPREP=IOBJ.AND.VPMASK			! save expected prep.
+Cold	SPREP=IOBJ.AND.VPMASK			! save expected prep.
 	SPREP=AND(IOBJ,VPMASK)			! save expected prep.
 	IF(SYNEQL(PREP2,OBJ2,IOBJ,IFL1,IFL2)) GO TO 6000
 C
@@ -240,7 +240,7 @@ C Indirect syntax match fails.
 C
 	IF(OBJ2.NE.0) GO TO 3000		! if ind object, on to next.
 2500	IF((QPREP.EQ.0).OR.(QPREP.EQ.SPREP)) DFORCE=J	 ! if prep mch.
-C	IF((VFLAG.AND.SDRIV).NE.0) DRIVE=J	! if driver, record.
+Cold	IF((VFLAG.AND.SDRIV).NE.0) DRIVE=J	! if driver, record.
 	IF(AND(VFLAG,SDRIV).NE.0) DRIVE=J	! if driver, record.
 	IF(DFLAG) WRITE(OUTCH,2510) J,QPREP,SPREP,DFORCE,DRIVE
 2510	FORMAT(' SYNMCH DEFAULT SYNTAXES- ',5I7)
@@ -258,16 +258,16 @@ C
 	IF(DRIVE.EQ.0) GO TO 10000		! any driver?
 	CALL UNPACK(DRIVE,DFORCE)		! unpack dflt syntax.
 	LCWORD=LCIFY(FINDVB(DRIVE),2)		! get verb string.
-C	LCPRP1=' '//LCIFY(FINDPR(DOBJ.AND.VPMASK),1)//' '
+Cold	LCPRP1=' '//LCIFY(FINDPR(DOBJ.AND.VPMASK),1)//' '
 	LCPRP1=' '//LCIFY(FINDPR(INT(AND(DOBJ,VPMASK))),1)//' '
-C	LCPRP2=' '//LCIFY(FINDPR(IOBJ.AND.VPMASK),1)//' '
+Cold	LCPRP2=' '//LCIFY(FINDPR(IOBJ.AND.VPMASK),1)//' '
 	LCPRP2=' '//LCIFY(FINDPR(INT(AND(IOBJ,VPMASK))),1)//' '
 C
 C Try to fill direct object slot if that was the problem.
 C
-C	IF(((VFLAG.AND.SDIR).EQ.0).OR.(OBJ1.NE.0)) GO TO 4000
+Cold	IF(((VFLAG.AND.SDIR).EQ.0).OR.(OBJ1.NE.0)) GO TO 4000
 	IF((AND(VFLAG,SDIR).EQ.0).OR.(OBJ1.NE.0)) GO TO 4000
-C	OBJ1=OFLAG.AND.OOBJ1
+Cold	OBJ1=OFLAG.AND.OOBJ1
 	OBJ1=AND(OFLAG,OOBJ1)
 	IF(OBJ1.EQ.0) GO TO 3500		! any orphan?
 	IF(SYNEQL(OPREP1,OBJ1,DOBJ,DFL1,DFL2)) GO TO 4000
@@ -278,7 +278,7 @@ C
 	IF(DFLAG) WRITE(OUTCH,3530) OBJ1
 3530	FORMAT(' SYNMCH- DO GWIM= ',I6)
 	IF(OBJ1.GT.0) GO TO 4000		! test result.
-C	CALL ORPHAN(-1,ACT,0,0,DOBJ.AND.VPMASK,' ',PREP2,OBJ2)	! fails, orphan.
+Cold	CALL ORPHAN(-1,ACT,0,0,DOBJ.AND.VPMASK,' ',PREP2,OBJ2)	! fails, orphan.
 	CALL ORPHAN(-1,ACT,0,0,INT(AND(DOBJ,VPMASK)),' ',PREP2,OBJ2)	! fails, orphan.
 	BUNSUB=0				! no EXCEPT clause.
 	IF(OBJ2.GT.0) GO TO 3800		! if iobj, go print.
@@ -289,7 +289,7 @@ C	CALL ORPHAN(-1,ACT,0,0,DOBJ.AND.VPMASK,' ',PREP2,OBJ2)	! fails, orphan.
 	RETURN
 C
 3800	X=IABS(ODESC2(OBJ2))			! get iobj description.
-C	READ(DBCH,REC=X) J,STR			! read data base.
+Cold	READ(DBCH,REC=X) J,STR			! read data base.
 	call dtext_$read (x, j, str)			! read data base
 	CALL TXCRYP(X,STR)			! decrypt the line.
 	WRITE(OUTCH,3880) LCWORD(1:NBLEN(LCWORD)),
@@ -303,9 +303,9 @@ C SYNMCH, PAGE 4
 C
 C Try to fill indirect object slot if that was the problem.
 C
-C 4000	IF(((VFLAG.AND.SIND).EQ.0).OR.(OBJ2.NE.0)) GO TO 6000
+Cold 4000	IF(((VFLAG.AND.SIND).EQ.0).OR.(OBJ2.NE.0)) GO TO 6000
 4000	IF((AND(VFLAG,SIND).EQ.0).OR.(OBJ2.NE.0)) GO TO 6000
-C	OBJ2=OFLAG.AND.OOBJ2
+Cold	OBJ2=OFLAG.AND.OOBJ2
 	OBJ2=AND(OFLAG,OOBJ2)
 	IF(OBJ2.EQ.0) GO TO 4500		! any orphan?
 	IF(SYNEQL(OPREP2,OBJ2,IOBJ,IFL1,IFL2)) GO TO 6000
@@ -317,18 +317,18 @@ C
 4550	FORMAT(' SYNMCH- IO GWIM= ',I6)
 	IF(OBJ2.GT.0) GO TO 6000
 	IF(OBJ1.GT.0) GO TO 4600		! if dobj, go print.
-C	CALL ORPHAN(-1,ACT,OFLAG.AND.OPREP1,
-C	&	OFLAG.AND.OOBJ1,IOBJ.AND.VPMASK,' ',0,0)
+Cold	CALL ORPHAN(-1,ACT,OFLAG.AND.OPREP1,
+Cold	&	OFLAG.AND.OOBJ1,IOBJ.AND.VPMASK,' ',0,0)
 	CALL ORPHAN(-1,ACT,INT(AND(OFLAG,OPREP1)),
 	&	INT(AND(OFLAG,OOBJ1)),INT(AND(IOBJ,VPMASK)),' ',0,0)
 	GO TO 3700
 C
 C Error with direct object available.
 C
-C 4600	CALL ORPHAN(-1,ACT,PREP1,OBJ1,IOBJ.AND.VPMASK,' ',0,0)
+Cold 4600	CALL ORPHAN(-1,ACT,PREP1,OBJ1,IOBJ.AND.VPMASK,' ',0,0)
 4600	CALL ORPHAN(-1,ACT,PREP1,OBJ1,INT(AND(IOBJ,VPMASK)),' ',0,0)
 	X=IABS(ODESC2(OBJ1))			! get dobj description.
-C	READ(DBCH,REC=X) J,STR			! read data base.
+Cold	READ(DBCH,REC=X) J,STR			! read data base.
 	call dtext_$read (x, j, str)			! read data base
 	CALL TXCRYP(X,STR)			! decrypt the line.
 	WRITE(OUTCH,4660) LCWORD(1:NBLEN(LCWORD)),
@@ -349,13 +349,13 @@ C
 C Now try to take individual objects and
 C in general clean up the parse vector.
 C
-C 6000	IF((VFLAG.AND.SFLIP).EQ.0) GO TO 7000	! flip?
+Cold 6000	IF((VFLAG.AND.SFLIP).EQ.0) GO TO 7000	! flip?
 6000	IF(AND(VFLAG,SFLIP).EQ.0) GO TO 7000	! flip?
 	J=OBJ1					! yes.
 	OBJ1=OBJ2
 	OBJ2=J
 C
-C 7000	PRSA=VFLAG.AND.SVMASK			! get verb.
+Cold 7000	PRSA=VFLAG.AND.SVMASK			! get verb.
 7000	PRSA=AND(VFLAG,SVMASK)			! get verb.
 	PRSO=OBJ1				! get dir obj.
 	PRSI=OBJ2				! get ind obj.
@@ -382,11 +382,11 @@ C
 C
 	VFLAG=VVOC(OLDJ)
 	J=OLDJ+1
-C	IF((VFLAG.AND.SDIR).EQ.0) RETURN	! dir object?
+Cold	IF((VFLAG.AND.SDIR).EQ.0) RETURN	! dir object?
 	IF(AND(VFLAG,SDIR).EQ.0) RETURN	! dir object?
 	DFL1=-1					! assume std.
 	DFL2=-1
-C	IF((VFLAG.AND.SSTD).EQ.0) GO TO 100	! std object?
+Cold	IF((VFLAG.AND.SSTD).EQ.0) GO TO 100	! std object?
 	IF(AND(VFLAG,SSTD).EQ.0) GO TO 100	! std object?
 	DFW1=-1					! yes.
 	DFW2=-1
@@ -397,12 +397,12 @@ C
 	DFW1=VVOC(J+1)
 	DFW2=VVOC(J+2)
 	J=J+3
-C	IF((DOBJ.AND.VEBIT).EQ.0) GO TO 200	! vbit = vfwim?
+Cold	IF((DOBJ.AND.VEBIT).EQ.0) GO TO 200	! vbit = vfwim?
 	IF(AND(DOBJ,VEBIT).EQ.0) GO TO 200	! vbit = vfwim?
 	DFL1=DFW1				! yes.
 	DFL2=DFW2
 C
-C 200	IF((VFLAG.AND.SIND).EQ.0) RETURN	! ind object?
+Cold 200	IF((VFLAG.AND.SIND).EQ.0) RETURN	! ind object?
 200	IF(AND(VFLAG,SIND).EQ.0) RETURN	! ind object?
 	IFL1=-1					! assume std.
 	IFL2=-1
@@ -410,7 +410,7 @@ C 200	IF((VFLAG.AND.SIND).EQ.0) RETURN	! ind object?
 	IFW1=VVOC(J+1)
 	IFW2=VVOC(J+2)
 	J=J+3
-C	IF((IOBJ.AND.VEBIT).EQ.0) RETURN	! vbit = vfwim?
+Cold	IF((IOBJ.AND.VEBIT).EQ.0) RETURN	! vbit = vfwim?
 	IF(AND(IOBJ,VEBIT).EQ.0) RETURN	! vbit = vfwim?
 	IFL1=IFW1				! yes.
 	IFL2=IFW2
@@ -427,9 +427,9 @@ C
 	%include dparam
 C
 	IF(OBJ.EQ.0) GO TO 100			! any object?
-C	SYNEQL=(PREP.EQ.(SPREP.AND.VPMASK)).AND.
-C	&	(((SFL1.AND.OFLAG1(OBJ)).OR.
-C	&	  (SFL2.AND.OFLAG2(OBJ))).NE.0)
+Cold	SYNEQL=(PREP.EQ.(SPREP.AND.VPMASK)).AND.
+Cold	&	(((SFL1.AND.OFLAG1(OBJ)).OR.
+Cold	&	  (SFL2.AND.OFLAG2(OBJ))).NE.0)
 	SYNEQL=(PREP.EQ.AND(SPREP,VPMASK)).AND.
 	&	(OR(AND(SFL1,OFLAG1(OBJ)),
 	&	  AND(SFL2,OFLAG2(OBJ))).NE.0)

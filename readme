@@ -7,7 +7,7 @@ free-form parser, so was changed to "C page" in some places.
 to dparam.fortran.incl.
 
 All usage of .AND., .OR., .XOR. and .NOT. on integer operands was
-changed to AND(), OR(), XOR() and COMPL().
+changed to AND(), OR(), XOR() and COMPL(). Old code marked as "Cold".
 
 In game$initfl, the calculation of SHOUR and SMIN was just broken, and
 was recoded to work correctly, fixing GTTIME().
@@ -20,8 +20,21 @@ Redefined RECLNT to 20 (words).
 
 Renamed PROGRAM DUNGEO to DUNGEON.
 
-Moved all COMMON DATA specications to BLOCK DATA FOO.
+Moved all COMMON DATA specications to BLOCK DATA FOO and BLOCK DATA BAR.
 
 Convert from DOS lines (cr/lf) to UNIX (cr).
+
+In OPEN statements, 'NAME' changed to 'FILE'. 
+
+In OPEN of DINDX.DAT, 'BLANK=NULL' added to fix handling of short lines.
+
+Open of DTEXT.DAT replaced with new code dtext_$open; read of DTEXT.DAT
+replaced with new code dtext_$read.
+
+Continuation lines changed to use '&'.
+
+Several lines started with 'D'; presumably a conditional compile based on a
+compiler debug flag; the lines were changed to start "C D".
+
 
 

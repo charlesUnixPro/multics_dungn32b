@@ -48,8 +48,6 @@ C
 	IMPLICIT INTEGER (A-Z)
 	%include dparam
 	CHARACTER*(TEXLNT) B1,B2
-C debug
-c	character*(texlnt) btmp
 	external dtext_$read (descriptors)
 C
 C Convert all arguments from dictionary numbers (if positive)
@@ -67,7 +65,7 @@ C
 	IF(X.EQ.0) RETURN			! anything to do?
 	TELFLG=.TRUE.				! said something.
 C
-C	READ(DBCH,REC=X) OLDREC,B1		! read first line.
+Cold	READ(DBCH,REC=X) OLDREC,B1		! read first line.
 	call dtext_$read (x, oldrec, b1)	! read first line.
 100	CALL TXCRYP(X,B1)			! decrypt line.
 C
@@ -78,7 +76,7 @@ C
 400	WRITE(OUTCH,650) B1(1:MAX0(1,NBLEN(B1)))! output line.
 650	FORMAT(1X,A)
 	X=X+1					! on to next record.
-C	READ(DBCH,REC=X) NEWREC,B1		! read next record.
+Cold	READ(DBCH,REC=X) NEWREC,B1		! read next record.
 	call dtext_$read (x, newrec, b1)	! read next record.
 	IF(OLDREC.EQ.NEWREC) GO TO 100		! continuation?
 	RETURN					! no, exit.
@@ -99,21 +97,10 @@ c is very short.
 C
 1000	B2(1:(TEXLNT-I))=B1(I+1:TEXLNT)		! copy rest of B1.
 C
-C	READ(DBCH,REC=Y) J,B1(I:TEXLNT)		! read sub record.
-
-c	print, "about to call read; y = ", y, " i = ", i
-c	print, "b1 = ", b1
-
+Cold	READ(DBCH,REC=Y) J,B1(I:TEXLNT)		! read sub record.
 	call dtext_$read (y, j, B1(I:TEXLNT))		! read sub record.
-c	call dtext_$read (y, j, btmp)		! read sub record.
-c          b1(i:texlnt) = btmp(1:texlnt-i+1)
-
-c	print, "b1 = ", b1
-c	print, "read returns j = ", j
 	CALL TXCRYP(Y,B1(I:TEXLNT))		! decrypt sub record.
-c	print, "b1 = ", b1
 	J=NBLEN(B1)				! backscan for blanks.
-c	print, "j = ", j
 	B1(J+1:TEXLNT)=B2(1:TEXLNT-J)
 C
 	Y=Z					! set up for next
