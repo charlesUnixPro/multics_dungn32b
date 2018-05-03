@@ -66,5 +66,5 @@ synonym: cxappl;
 
 
 objectname: dtext_;
-synonym: idate,itime;
+synonym: open,read,close,idate,itime;
 
